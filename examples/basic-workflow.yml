@@ -1,0 +1,33 @@
+# Basic Baseline compliance check workflow
+name: Baseline Compliance
+
+on:
+  pull_request:
+    paths:
+      - '**/*.{js,jsx,ts,tsx,css,scss,sass,less,html,htm,vue,svelte}'
+  push:
+    branches: [main, master, develop]
+
+jobs:
+  baseline-check:
+    name: Check Baseline Compliance
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Run Baseline compliance check
+        uses: baseline/action@v1
+        with:
+          # Require features to be "newly interoperable" or better
+          baseline-threshold: newly
+          
+          # Fail the build on violations
+          enforcement-mode: error
+          
+          # Post detailed comments on PRs
+          comment-on-pr: true
+          
+          # GitHub token for API access
+          github-token: ${{ secrets.GITHUB_TOKEN }}

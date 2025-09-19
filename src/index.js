@@ -1,0 +1,523 @@
+const core = require('@actions/core');
+const fs = require('fs').promises;
+const path = require('path');
+const glob = require('glob');
+
+// Import our modules
+const ConfigLoader = require('./utils/config-loader');
+const BaselineDataManager = require('./utils/baseline-data-manager');
+const CSSFeatureDetector = require('./detectors/css-feature-detector');
+const JSFeatureDetector = require('./detectors/js-feature-detector');
+const HTMLFeatureDetector = require('./detectors/html-feature-detector');
+const PolicyEngine = require('./engines/policy-engine');
+const ReportGenerator = require('./utils/report-generator');
+const GitHubIntegration = require('./utils/github-integration');
+
+/**
+ * Main Baseline GitHub Action entry point
+ */
+class BaselineAction {
+  constructor() {
+    this.startTime = Date.now();
+    this.config = null;
+    this.baselineDataManager = null;
+    this.detectors = {};
+    this.policyEngine = null;
+    this.reportGenerator = null;
+    this.githubIntegration = null;
+    this.allFeatures = [];
+    this.violations = [];
+    this.summary = {};
+  }
+
+  /**
+   * Run the Baseline action
+   * @returns {Promise<void>}
+   */
+  async run() {
+    try {
+      core.info('🚀 Starting Baseline compliance check...');
+      
+      // Initialize components
+      await this.initialize();
+      
+      // Get files to analyze
+      const filesToAnalyze = await this.getFilesToAnalyze();
+      core.info(`📁 Found ${filesToAnalyze.length} files to analyze`);
+      
+      if (filesToAnalyze.length === 0) {
+        core.info('✅ No files to analyze, compliance check passed');
+        await this.handleSuccess();
+        return;
+      }
+      
+      // Analyze files for features
+      await this.analyzeFiles(filesToAnalyze);
+      core.info(`🔍 Detected ${this.allFeatures.length} total features`);
+      
+      // Evaluate features against policies
+      await this.evaluateCompliance();
+      core.info(`📊 Found ${this.violations.length} compliance violations`);
+      
+      // Generate reports and handle results
+      await this.generateReports();
+      await this.handleResults();
+      
+      // Performance summary
+      const duration = Date.now() - this.startTime;
+      core.info(`✅ Baseline compliance check completed in ${duration}ms`);
+      
+    } catch (error) {
+      await this.handleError(error);
+    }
+  }
+
+  /**
+   * Initialize all components
+   * @returns {Promise<void>}
+   */
+  async initialize() {
+    try {
+      // Load configuration
+      core.info('📋 Loading configuration...');
+      const configLoader = new ConfigLoader();
+      this.config = await configLoader.loadConfig();
+      
+      // Initialize Baseline data manager
+      core.info('🌐 Initializing Baseline data manager...');
+      this.baselineDataManager = new BaselineDataManager({
+        cacheDir: path.join(process.cwd(), '.baseline-cache')
+      });
+      await this.baselineDataManager.initialize();
+      
+      // Load Baseline data
+      core.info('📥 Loading Baseline feature data...');
+      await this.baselineDataManager.getAllBaselineFeatures();
+      
+      // Initialize detectors
+      this.detectors = {
+        css: new CSSFeatureDetector(this.config.rules?.css),
+        js: new JSFeatureDetector(this.config.rules?.javascript),
+        html: new HTMLFeatureDetector(this.config.rules?.html)
+      };
+      
+      // Initialize policy engine
+      this.policyEngine = new PolicyEngine(this.config, this.baselineDataManager);
+      
+      // Initialize report generator
+      this.reportGenerator = new ReportGenerator(this.config.reporting);
+      
+      // Initialize GitHub integration if token is available
+      const githubToken = core.getInput('github-token') || process.env.GITHUB_TOKEN;
+      if (githubToken) {
+        this.githubIntegration = new GitHubIntegration(githubToken, this.config.github);
+      }
+      
+      core.info('✅ All components initialized successfully');
+      
+    } catch (error) {
+      throw new Error(`Initialization failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get list of files to analyze
+   * @returns {Promise<Array>} Array of file paths
+   */
+  async getFilesToAnalyze() {
+    let filesToAnalyze = [];
+    
+    try {
+      if (this.githubIntegration) {
+        // Get changed files from GitHub if available
+        const changedFiles = await this.githubIntegration.getChangedFiles();
+        
+        if (changedFiles.length > 0) {
+          core.info(`📝 Analyzing ${changedFiles.length} changed files from PR/push`);
+          filesToAnalyze = changedFiles.map(file => file.filename);
+        }
+      }
+      
+      // If no changed files, analyze all files matching patterns
+      if (filesToAnalyze.length === 0) {
+        core.info('📁 No changed files detected, analyzing all matching files');
+        filesToAnalyze = await this.getAllMatchingFiles();
+      }
+      
+      // Apply filters
+      filesToAnalyze = this.applyFileFilters(filesToAnalyze);
+      
+      return filesToAnalyze;
+      
+    } catch (error) {
+      core.warning(`Failed to get files list: ${error.message}, falling back to pattern matching`);
+      return await this.getAllMatchingFiles();
+    }
+  }
+
+  /**
+   * Get all files matching include patterns
+   * @returns {Promise<Array>} Array of file paths
+   */
+  async getAllMatchingFiles() {
+    const includePatterns = this.config.enforcement['include-patterns'];
+    const patterns = Array.isArray(includePatterns) ? includePatterns : [includePatterns];
+    
+    const allFiles = [];
+    
+    for (const pattern of patterns) {
+      const files = await new Promise((resolve, reject) => {
+        glob(pattern, { 
+          cwd: process.cwd(),
+          ignore: this.config.enforcement['ignore-patterns'] || []
+        }, (err, matches) => {
+          if (err) reject(err);
+          else resolve(matches);
+        });
+      });
+      
+      allFiles.push(...files);
+    }
+    
+    // Remove duplicates and sort
+    return [...new Set(allFiles)].sort();
+  }
+
+  /**
+   * Apply include/exclude filters to file list
+   * @param {Array} files - Array of file paths
+   * @returns {Array} Filtered file paths
+   */
+  applyFileFilters(files) {
+    const micromatch = require('micromatch');
+    
+    let filteredFiles = files;
+    
+    // Apply include patterns
+    const includePatterns = this.config.enforcement['include-patterns'];
+    if (includePatterns) {
+      const patterns = Array.isArray(includePatterns) ? includePatterns : [includePatterns];
+      filteredFiles = filteredFiles.filter(file => 
+        patterns.some(pattern => micromatch.isMatch(file, pattern))
+      );
+    }
+    
+    // Apply exclude patterns
+    const excludePatterns = this.config.enforcement['ignore-patterns'];
+    if (excludePatterns) {
+      const patterns = Array.isArray(excludePatterns) ? excludePatterns : [excludePatterns];
+      filteredFiles = filteredFiles.filter(file => 
+        !patterns.some(pattern => micromatch.isMatch(file, pattern))
+      );
+    }
+    
+    return filteredFiles;
+  }
+
+  /**
+   * Analyze files for web platform features
+   * @param {Array} filePaths - Array of file paths to analyze
+   * @returns {Promise<void>}
+   */
+  async analyzeFiles(filePaths) {
+    core.info('🔍 Analyzing files for web platform features...');
+    
+    const analysisPromises = filePaths.map(async (filePath) => {
+      try {
+        return await this.analyzeFile(filePath);
+      } catch (error) {
+        core.warning(`Failed to analyze ${filePath}: ${error.message}`);
+        return [];
+      }
+    });
+    
+    const results = await Promise.all(analysisPromises);
+    
+    // Flatten all features
+    this.allFeatures = results.flat();
+    
+    core.debug(`Feature detection completed: ${this.allFeatures.length} features found`);
+  }
+
+  /**
+   * Analyze a single file
+   * @param {string} filePath - Path to file to analyze
+   * @returns {Promise<Array>} Array of detected features
+   */
+  async analyzeFile(filePath) {
+    const absolutePath = path.resolve(filePath);
+    const fileExtension = path.extname(filePath).toLowerCase();
+    const features = [];
+    
+    try {
+      const content = await fs.readFile(absolutePath, 'utf8');
+      
+      // Detect features based on file type
+      switch (fileExtension) {
+      case '.css':
+      case '.scss':
+      case '.sass':
+      case '.less':
+        features.push(...await this.detectors.css.detectFeatures(content, filePath));
+        break;
+          
+      case '.js':
+      case '.jsx':
+      case '.ts':
+      case '.tsx':
+        features.push(...await this.detectors.js.detectFeatures(content, filePath));
+        break;
+          
+      case '.html':
+      case '.htm':
+        features.push(...await this.detectors.html.detectFeatures(content, filePath));
+        // Also analyze any inline CSS/JS
+        features.push(...await this.analyzeInlineCode(content, filePath));
+        break;
+          
+      case '.vue':
+      case '.svelte':
+        // Handle component files
+        features.push(...await this.analyzeComponentFile(content, filePath));
+        break;
+      }
+      
+      return features;
+      
+    } catch (error) {
+      core.debug(`Error reading ${filePath}: ${error.message}`);
+      return [];
+    }
+  }
+
+  /**
+   * Analyze inline CSS and JavaScript in HTML files
+   * @param {string} htmlContent - HTML content
+   * @param {string} filePath - File path
+   * @returns {Promise<Array>} Array of detected features
+   */
+  async analyzeInlineCode(htmlContent, filePath) {
+    const features = [];
+    
+    try {
+      // Extract inline CSS
+      const styleMatches = htmlContent.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi);
+      for (const match of styleMatches) {
+        const cssContent = match[1];
+        features.push(...await this.detectors.css.detectFeatures(cssContent, `${filePath}:inline-css`));
+      }
+      
+      // Extract inline JavaScript
+      const scriptMatches = htmlContent.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi);
+      for (const match of scriptMatches) {
+        const jsContent = match[1];
+        if (jsContent.trim()) {
+          features.push(...await this.detectors.js.detectFeatures(jsContent, `${filePath}:inline-js`));
+        }
+      }
+      
+    } catch (error) {
+      core.debug(`Error analyzing inline code in ${filePath}: ${error.message}`);
+    }
+    
+    return features;
+  }
+
+  /**
+   * Analyze Vue/Svelte component files
+   * @param {string} content - Component file content
+   * @param {string} filePath - File path
+   * @returns {Promise<Array>} Array of detected features
+   */
+  async analyzeComponentFile(content, filePath) {
+    const features = [];
+    
+    try {
+      // Extract template (HTML)
+      const templateMatch = content.match(/<template[^>]*>([\s\S]*?)<\/template>/i);
+      if (templateMatch) {
+        features.push(...await this.detectors.html.detectFeatures(templateMatch[1], `${filePath}:template`));
+      }
+      
+      // Extract style (CSS)
+      const styleMatches = content.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi);
+      for (const match of styleMatches) {
+        features.push(...await this.detectors.css.detectFeatures(match[1], `${filePath}:style`));
+      }
+      
+      // Extract script (JavaScript/TypeScript)
+      const scriptMatch = content.match(/<script[^>]*>([\s\S]*?)<\/script>/i);
+      if (scriptMatch) {
+        features.push(...await this.detectors.js.detectFeatures(scriptMatch[1], `${filePath}:script`));
+      }
+      
+    } catch (error) {
+      core.debug(`Error analyzing component file ${filePath}: ${error.message}`);
+    }
+    
+    return features;
+  }
+
+  /**
+   * Evaluate features against compliance policies
+   * @returns {Promise<void>}
+   */
+  async evaluateCompliance() {
+    core.info('📊 Evaluating features against Baseline policies...');
+    
+    this.violations = await this.policyEngine.evaluateFeatures(this.allFeatures);
+    this.summary = this.policyEngine.getViolationsSummary();
+  }
+
+  /**
+   * Generate reports
+   * @returns {Promise<void>}
+   */
+  async generateReports() {
+    if (this.violations.length === 0) {
+      core.info('✅ No violations found, skipping detailed report generation');
+      return;
+    }
+    
+    core.info('📄 Generating compliance reports...');
+    
+    const metadata = {
+      totalFeatures: this.allFeatures.length,
+      complianceScore: this.policyEngine.calculateComplianceScore(this.allFeatures, this.violations),
+      baseline: {
+        threshold: this.config.rules?.css?.['baseline-threshold'] || 'newly'
+      },
+      actionVersion: '1.0.0'
+    };
+    
+    // Generate main report
+    const reportContent = await this.reportGenerator.generateReport(
+      this.violations, 
+      this.summary, 
+      metadata
+    );
+    
+    // Save report to file
+    const reportPath = path.join(process.cwd(), 'baseline-report.md');
+    await this.reportGenerator.saveReport(reportContent, reportPath);
+    
+    // Set outputs for other actions to use
+    core.setOutput('report-path', reportPath);
+    core.setOutput('violations-count', this.violations.length.toString());
+    core.setOutput('compliance-score', metadata.complianceScore.toString());
+    core.setOutput('has-violations', this.violations.length > 0 ? 'true' : 'false');
+    
+    core.info(`📋 Report saved to ${reportPath}`);
+  }
+
+  /**
+   * Handle results and determine action outcome
+   * @returns {Promise<void>}
+   */
+  async handleResults() {
+    const hasViolations = this.violations.length > 0;
+    const enforcementMode = core.getInput('enforcement-mode') || 'error';
+    const maxViolations = parseInt(core.getInput('max-violations') || '0', 10);
+    
+    // GitHub integration
+    if (this.githubIntegration) {
+      const metadata = {
+        totalFeatures: this.allFeatures.length,
+        complianceScore: this.policyEngine.calculateComplianceScore(this.allFeatures, this.violations),
+        baseline: {
+          threshold: this.config.rules?.css?.['baseline-threshold'] || 'newly'
+        }
+      };
+      
+      await this.githubIntegration.processResults(
+        this.violations, 
+        this.summary, 
+        metadata,
+        '' // Report content handled separately
+      );
+      
+      // Create workflow summary
+      await this.githubIntegration.createWorkflowSummary(this.violations, this.summary, metadata);
+    }
+    
+    // Determine if action should fail
+    const shouldFail = hasViolations && (
+      enforcementMode === 'error' || 
+      enforcementMode === 'block' ||
+      this.violations.length > maxViolations
+    );
+    
+    if (shouldFail) {
+      const message = `Baseline compliance check failed with ${this.violations.length} violation${this.violations.length !== 1 ? 's' : ''}`;
+      core.setFailed(message);
+    } else if (hasViolations && enforcementMode === 'warn') {
+      core.warning(`Found ${this.violations.length} Baseline compliance violations (warnings only)`);
+    } else {
+      core.info('✅ Baseline compliance check passed!');
+    }
+  }
+
+  /**
+   * Handle success case (no files or no violations)
+   * @returns {Promise<void>}
+   */
+  async handleSuccess() {
+    // Set success outputs
+    core.setOutput('violations-count', '0');
+    core.setOutput('compliance-score', '100');
+    core.setOutput('has-violations', 'false');
+    
+    if (this.githubIntegration) {
+      const metadata = {
+        totalFeatures: 0,
+        complianceScore: 100,
+        baseline: {
+          threshold: this.config?.rules?.css?.['baseline-threshold'] || 'newly'
+        }
+      };
+      
+      await this.githubIntegration.processResults([], {}, metadata, '');
+    }
+    
+    core.info('🎉 Baseline compliance check completed successfully!');
+  }
+
+  /**
+   * Handle errors during execution
+   * @param {Error} error - Error that occurred
+   * @returns {Promise<void>}
+   */
+  async handleError(error) {
+    core.error(`Baseline action failed: ${error.message}`);
+    
+    if (error.stack) {
+      core.debug(`Stack trace: ${error.stack}`);
+    }
+    
+    // Set failure outputs
+    core.setOutput('violations-count', '-1');
+    core.setOutput('compliance-score', '0');
+    core.setOutput('has-violations', 'error');
+    
+    // Fail the action
+    core.setFailed(error.message);
+  }
+}
+
+/**
+ * Main execution function
+ */
+async function main() {
+  const action = new BaselineAction();
+  await action.run();
+}
+
+// Execute if this file is run directly
+if (require.main === module) {
+  main().catch(error => {
+    core.setFailed(`Unhandled error: ${error.message}`);
+    process.exit(1);
+  });
+}
+
+module.exports = BaselineAction;

@@ -1,0 +1,74 @@
+name: 'Baseline'
+description: 'Enforce web platform feature compatibility standards in CI/CD'
+author: 'baseline'
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  baseline-threshold:
+    description: 'Minimum Baseline status required (limited|newly|widely)'
+    required: false
+    default: 'newly'
+  
+  include-patterns:
+    description: 'File patterns to analyze'
+    required: false
+    default: '**/*.{js,jsx,ts,tsx,css,scss,html}'
+  
+  exclude-patterns:
+    description: 'File patterns to ignore'
+    required: false
+    default: 'node_modules/**,dist/**,build/**'
+  
+  enforcement-mode:
+    description: 'Enforcement level (warn|error|block)'
+    required: false
+    default: 'error'
+  
+  max-violations:
+    description: 'Maximum number of violations before failing'
+    required: false
+    default: '0'
+  
+  browserslist-config:
+    description: 'Path to browserslist config file'
+    required: false
+    default: ''
+  
+  comment-on-pr:
+    description: 'Whether to post detailed PR comments'
+    required: false
+    default: 'true'
+  
+  fail-on-new-only:
+    description: 'Fail on newly introduced violations only'
+    required: false
+    default: 'false'
+  
+  config-path:
+    description: 'Path to Baseline configuration file'
+    required: false
+    default: '.baseline.json'
+  
+  github-token:
+    description: 'GitHub token for API access'
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  violations-count:
+    description: 'Number of compliance violations found'
+  
+  compliance-score:
+    description: 'Percentage of features meeting baseline requirements'
+  
+  has-violations:
+    description: 'Whether violations were found (true/false)'
+  
+  report-path:
+    description: 'Path to the generated report file'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

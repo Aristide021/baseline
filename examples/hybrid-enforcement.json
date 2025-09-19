@@ -1,0 +1,51 @@
+{
+  "name": "Hybrid Enforcement Strategy",
+  "description": "Combines yearly baseline enforcement with per-feature overrides for maximum flexibility", 
+  "rules": {
+    "css": {
+      "baseline-threshold": "newly",
+      "strict-mode": false,
+      "allowed-exceptions": [
+        {
+          "feature": "css-nesting",
+          "files": ["src/legacy/**/*.css"]
+        }
+      ]
+    },
+    "javascript": {
+      "baseline-threshold": "newly",
+      "strict-mode": true,
+      "allowed-exceptions": []
+    },
+    "html": {
+      "baseline-threshold": "newly", 
+      "ignore-attributes": ["data-*"],
+      "allowed-exceptions": []
+    }
+  },
+  "enforcement": {
+    "mode": "hybrid",
+    "max-violations": 5,
+    "fail-on-new-only": false,
+    "yearly-rules": {
+      "2020": "error",
+      "2021": "error",
+      "2022": "warn",
+      "2023": "warn", 
+      "2024": "info",
+      "2025": "info"
+    },
+    "interop-priority": true,
+    "severity-weights": {
+      "high": 1.0,
+      "medium": 0.6,
+      "low": 0.3
+    }
+  },
+  "reporting": {
+    "include-remediation": true,
+    "group-by-feature": true,
+    "show-polyfill-suggestions": true,
+    "include-compatibility-data": true
+  }
+}

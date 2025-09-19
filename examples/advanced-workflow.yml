@@ -1,0 +1,86 @@
+# Advanced Baseline compliance workflow with caching and multiple thresholds
+name: Advanced Baseline Compliance
+
+on:
+  pull_request:
+    paths:
+      - '**/*.{js,jsx,ts,tsx,css,scss,sass,less,html,htm,vue,svelte}'
+      - '.baseline.json'
+  push:
+    branches: [main, develop]
+
+jobs:
+  baseline-check:
+    name: Baseline Compliance Check
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        threshold: [newly, widely]
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history for accurate diff analysis
+          fetch-depth: 0
+          
+      - name: Cache Baseline data
+        uses: actions/cache@v4
+        with:
+          path: .baseline-cache
+          key: baseline-data-${{ hashFiles('.baseline.json') }}-${{ github.sha }}
+          restore-keys: |
+            baseline-data-${{ hashFiles('.baseline.json') }}-
+            baseline-data-
+            
+      - name: Baseline Check (${{ matrix.threshold }})
+        uses: baseline/action@v1
+        with:
+          baseline-threshold: ${{ matrix.threshold }}
+          config-path: .baseline.json
+          enforcement-mode: ${{ matrix.threshold == 'widely' && 'warn' || 'error' }}
+          fail-on-new-only: ${{ github.event_name == 'pull_request' }}
+          max-violations: ${{ matrix.threshold == 'widely' && '10' || '0' }}
+          comment-on-pr: ${{ matrix.threshold == 'newly' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Upload compliance report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: baseline-report-${{ matrix.threshold }}
+          path: |
+            baseline-report.md
+            baseline-report.json
+          retention-days: 7
+          
+  # Create summary report combining all threshold results
+  summary:
+    name: Compliance Summary
+    runs-on: ubuntu-latest
+    needs: baseline-check
+    if: always()
+    
+    steps:
+      - name: Download all reports
+        uses: actions/download-artifact@v4
+        with:
+          path: reports/
+          
+      - name: Generate summary
+        run: |
+          echo "# 📊 Baseline Compliance Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Results by Threshold" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          for threshold in newly widely; do
+            if [ -f "reports/baseline-report-$threshold/baseline-report.md" ]; then
+              echo "### $threshold Interoperable" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              # Extract summary from report
+              grep -A 10 "## Summary" "reports/baseline-report-$threshold/baseline-report.md" >> $GITHUB_STEP_SUMMARY || true
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
