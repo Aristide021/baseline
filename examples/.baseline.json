@@ -1,0 +1,86 @@
+{
+  "$schema": "https://baseline.dev/schemas/config.json",
+  "rules": {
+    "css": {
+      "baseline-threshold": "newly",
+      "strict-mode": false,
+      "allowed-exceptions": [
+        {
+          "feature": "css-container-queries",
+          "reason": "Progressive enhancement with @supports fallback implemented",
+          "files": ["src/components/modern/**/*.css", "src/styles/experimental/**"]
+        },
+        {
+          "feature": "css-cascade-layers",
+          "reason": "Used only in non-critical styling enhancements",
+          "files": ["src/styles/enhancements.css"]
+        }
+      ],
+      "ignore-vendor-prefixes": true,
+      "experimental-features": false
+    },
+    "javascript": {
+      "baseline-threshold": "newly", 
+      "strict-mode": true,
+      "allowed-exceptions": [
+        {
+          "feature": "navigation-api",
+          "reason": "Polyfill provided for unsupported browsers",
+          "files": ["src/router/**/*.js"]
+        }
+      ],
+      "polyfill-detection": true,
+      "modern-syntax-only": false
+    },
+    "html": {
+      "baseline-threshold": "newly",
+      "ignore-attributes": ["data-*", "x-*"],
+      "allowed-exceptions": [
+        {
+          "feature": "html-loading-attribute",
+          "reason": "Graceful degradation implemented",
+          "files": ["**/*.html"]
+        }
+      ],
+      "validate-semantics": true
+    }
+  },
+  "enforcement": {
+    "max-violations": 0,
+    "fail-on-new-only": false,
+    "severity-weights": {
+      "high": 1.0,
+      "medium": 0.7,
+      "low": 0.3
+    },
+    "ignore-patterns": [
+      "node_modules/**",
+      "dist/**", 
+      "build/**",
+      "coverage/**",
+      "*.min.{js,css}",
+      "vendor/**",
+      "third-party/**"
+    ],
+    "include-patterns": [
+      "src/**/*.{js,jsx,ts,tsx}",
+      "src/**/*.{css,scss,sass,less}",
+      "public/**/*.html",
+      "components/**/*.{vue,svelte}"
+    ]
+  },
+  "reporting": {
+    "include-remediation": true,
+    "group-by-feature": true,
+    "show-polyfill-suggestions": true,
+    "include-compatibility-data": true,
+    "max-violations-per-file": 25,
+    "output-format": "markdown"
+  },
+  "github": {
+    "comment-on-pr": true,
+    "update-existing-comment": true,
+    "create-status-check": true,
+    "status-check-name": "Baseline Compliance"
+  }
+}

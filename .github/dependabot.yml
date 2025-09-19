@@ -1,0 +1,35 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    reviewers:
+      - "baseline-maintainer"
+    assignees:
+      - "baseline-maintainer"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    open-pull-requests-limit: 5
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    ignore:
+      # Ignore major version updates for critical dependencies
+      - dependency-name: "web-features"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@babel/core"
+        update-types: ["version-update:semver-major"]
+    groups:
+      babel:
+        patterns:
+          - "@babel/*"
+      testing:
+        patterns:
+          - "jest*"
+          - "@types/jest"
+      linting:
+        patterns:
+          - "eslint*"
+          - "@eslint/*"

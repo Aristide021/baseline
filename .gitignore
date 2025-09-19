@@ -1,0 +1,72 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Coverage reports
+coverage/
+*.lcov
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Build output (but keep dist/ for GitHub Actions)
+build/
+
+# Logs
+logs
+*.log
+
+# Cache directories
+.baseline-cache/
+.npm
+.eslintcache
+
+# Claude IDE settings
+.claude/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test output
+test-results/
+baseline-report.*
+.temp-invalid-cache/
+.test-fallback-cache/
+
+# Generated research files (should not be committed)
+css-feature-research-report.json
+css-implementation-priority.json
+integration-recommendations-report.json
+enhanced-css-mappings.js
+repomix-output.xml
+technical_documentation.md
+CSS_FEATURE_RESEARCH_SUMMARY.md
+
+# Temporary files
+tmp/
+temp/

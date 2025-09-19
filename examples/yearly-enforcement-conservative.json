@@ -1,0 +1,46 @@
+{
+  "name": "Conservative Yearly Enforcement",
+  "description": "Enforce only well-established baseline features, conservative approach for enterprise",
+  "rules": {
+    "css": {
+      "baseline-threshold": "newly",
+      "strict-mode": false,
+      "allowed-exceptions": []
+    },
+    "javascript": {
+      "baseline-threshold": "newly", 
+      "strict-mode": true,
+      "allowed-exceptions": []
+    },
+    "html": {
+      "baseline-threshold": "newly",
+      "ignore-attributes": ["data-*"],
+      "allowed-exceptions": []
+    }
+  },
+  "enforcement": {
+    "mode": "yearly",
+    "max-violations": 0,
+    "fail-on-new-only": false,
+    "yearly-rules": {
+      "2020": "error",
+      "2021": "error", 
+      "2022": "warn",
+      "2023": "info",
+      "2024": "off",
+      "2025": "off"
+    },
+    "interop-priority": false,
+    "severity-weights": {
+      "high": 1.0,
+      "medium": 0.6,
+      "low": 0.3
+    }
+  },
+  "reporting": {
+    "include-remediation": true,
+    "group-by-feature": true,
+    "show-polyfill-suggestions": true,
+    "include-compatibility-data": true
+  }
+}
