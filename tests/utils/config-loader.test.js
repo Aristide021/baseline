@@ -245,6 +245,165 @@ describe('ConfigLoader', () => {
     });
   });
 
+  describe('Browserslist Integration', () => {
+    beforeEach(() => {
+      // Ensure clean browserslist mock for each test
+      const mockBrowserslist = require('browserslist');
+      mockBrowserslist.mockClear();
+    });
+
+    it('should load targets from browserslist when no explicit targets exist', async () => {
+      // Mock browserslist to return test data
+      const mockBrowserslist = require('browserslist');
+      mockBrowserslist.mockReturnValue([
+        'chrome 114',
+        'chrome 115', 
+        'firefox 115',
+        'firefox 116',
+        'safari 17'
+      ]);
+
+      global.mockFs.access.mockRejectedValue(new Error('ENOENT')); // No config files
+      
+      const config = await configLoader.loadConfig();
+      
+      expect(config.targets).toEqual([
+        'chrome 114',
+        'chrome 115', 
+        'firefox 115',
+        'firefox 116',
+        'safari 17'
+      ]);
+      expect(config.targetSource).toBe('browserslist');
+    });
+
+    it('should skip browserslist when explicit targets already exist', async () => {
+      const mockBrowserslist = require('browserslist');
+      mockBrowserslist.mockClear();
+      
+      // Test the browserslist loading logic directly with existing configs
+      const existingConfigs = [
+        {}, // default config
+        { targets: ['chrome >= 120', 'firefox >= 120'] } // file config with targets
+      ];
+      
+      const browserslistConfig = await configLoader.loadBrowserslistConfig(existingConfigs);
+      
+      // Should return null because targets already exist
+      expect(browserslistConfig).toBeNull();
+      expect(mockBrowserslist).not.toHaveBeenCalled();
+    });
+
+    it('should handle browserslist errors gracefully', async () => {
+      const mockBrowserslist = require('browserslist');
+      mockBrowserslist.mockImplementation(() => {
+        throw new Error('No browserslist config found');
+      });
+
+      global.mockFs.access.mockRejectedValue(new Error('ENOENT')); // No config files
+      
+      const config = await configLoader.loadConfig();
+      
+      // Should fall back to default behavior without targets
+      expect(config.targets).toBeUndefined();
+      expect(config.targetSource).toBeUndefined();
+    });
+
+    it('should handle empty browserslist results', async () => {
+      const mockBrowserslist = require('browserslist');
+      mockBrowserslist.mockReturnValue([]);
+
+      global.mockFs.access.mockRejectedValue(new Error('ENOENT')); // No config files
+      
+      const config = await configLoader.loadConfig();
+      
+      // Should fall back to default behavior
+      expect(config.targets).toBeUndefined();
+      expect(config.targetSource).toBeUndefined();
+    });
+  });
+
+  describe('Official Baseline Query Detection', () => {
+    it('should detect yearly baseline queries', () => {
+      const queries = ['baseline 2022', 'baseline 2023', 'chrome >= 100'];
+      const baselineInfo = configLoader.detectBaselineQueries(queries);
+      
+      expect(baselineInfo.hasBaselineQueries).toBe(true);
+      expect(baselineInfo.types).toContain('yearly');
+      expect(baselineInfo.years).toEqual([2022, 2023]);
+      expect(baselineInfo.queries).toEqual(['baseline 2022', 'baseline 2023']);
+    });
+
+    it('should detect widely available queries', () => {
+      const queries = ['baseline widely available', 'firefox >= 90'];
+      const baselineInfo = configLoader.detectBaselineQueries(queries);
+      
+      expect(baselineInfo.hasBaselineQueries).toBe(true);
+      expect(baselineInfo.types).toContain('widely');
+      expect(baselineInfo.queries).toEqual(['baseline widely available']);
+    });
+
+    it('should detect newly available queries', () => {
+      const queries = ['baseline newly available'];
+      const baselineInfo = configLoader.detectBaselineQueries(queries);
+      
+      expect(baselineInfo.hasBaselineQueries).toBe(true);
+      expect(baselineInfo.types).toContain('newly');
+    });
+
+    it('should detect date-specific queries', () => {
+      const queries = ['baseline widely available on 2024-06-06'];
+      const baselineInfo = configLoader.detectBaselineQueries(queries);
+      
+      expect(baselineInfo.hasBaselineQueries).toBe(true);
+      expect(baselineInfo.types).toContain('widely');
+      expect(baselineInfo.dates).toContain('2024-06-06');
+    });
+
+    it('should handle mixed query types', () => {
+      const queries = [
+        'baseline 2021',
+        'baseline widely available',
+        'baseline newly available',
+        'chrome >= 100'
+      ];
+      const baselineInfo = configLoader.detectBaselineQueries(queries);
+      
+      expect(baselineInfo.hasBaselineQueries).toBe(true);
+      expect(baselineInfo.types).toEqual(expect.arrayContaining(['yearly', 'widely', 'newly']));
+      expect(baselineInfo.years).toContain(2021);
+    });
+
+    it('should return empty info for non-baseline queries', () => {
+      const queries = ['chrome >= 100', 'firefox >= 90', 'safari >= 15'];
+      const baselineInfo = configLoader.detectBaselineQueries(queries);
+      
+      expect(baselineInfo.hasBaselineQueries).toBe(false);
+      expect(baselineInfo.queries).toEqual([]);
+      expect(baselineInfo.types).toEqual([]);
+    });
+
+    it('should handle empty query list', () => {
+      const baselineInfo = configLoader.detectBaselineQueries([]);
+      
+      expect(baselineInfo.hasBaselineQueries).toBe(false);
+      expect(baselineInfo.queries).toEqual([]);
+    });
+
+    it('should deduplicate repeated query types', () => {
+      const queries = [
+        'baseline 2021',
+        'baseline 2022', 
+        'baseline widely available',
+        'baseline widely available on 2024-01-01'
+      ];
+      const baselineInfo = configLoader.detectBaselineQueries(queries);
+      
+      expect(baselineInfo.types).toEqual(['yearly', 'widely']);
+      expect(baselineInfo.years).toEqual([2021, 2022]);
+    });
+  });
+
   describe('Error Handling', () => {
     it('should handle file system errors gracefully', async () => {
       global.mockFs.access.mockRejectedValue(new Error('Permission denied'));

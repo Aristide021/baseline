@@ -1,0 +1,11 @@
+{
+  "name": "test-project",
+  "version": "1.0.0",
+  "browserslist": [
+    "chrome >= 114",
+    "edge >= 114", 
+    "firefox >= 115",
+    "safari >= 17",
+    "ios_saf >= 17"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://baseline.dev/schemas/config.json",
+  "targets": ["baseline 2022"],
+  "enforcement": {
+    "mode": "yearly",
+    "comment": "Auto-configured from 'baseline 2022' query",
+    "baseline-query-mode": true,
+    "detected-queries": ["baseline 2022"],
+    "auto-yearly-rules": {
+      "2020": "error",
+      "2021": "error", 
+      "2022": "error",
+      "2023": "warn",
+      "2024": "info",
+      "2025": "off"
+    }
+  },
+  "reporting": {
+    "include-baseline-context": true,
+    "show-query-alignment": true,
+    "include-age-analysis": true
+  }
+}

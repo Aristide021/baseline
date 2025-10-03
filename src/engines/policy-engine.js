@@ -9,6 +9,9 @@ class PolicyEngine {
     this.baselineDataManager = baselineDataManager;
     this.violations = [];
     
+    // Auto-configure enforcement based on official Baseline queries
+    this.autoConfigureFromBaselineQueries();
+    
     // Default configuration
     this.defaultConfig = {
       rules: {
@@ -55,6 +58,95 @@ class PolicyEngine {
 
     // Merge default config with provided config
     this.mergedConfig = this.mergeConfigs(this.defaultConfig, config);
+  }
+
+  /**
+   * Auto-configure enforcement based on official Baseline queries detected in browserslist
+   */
+  autoConfigureFromBaselineQueries() {
+    if (!this.config.baselineQueries?.hasBaselineQueries) {
+      return; // No official Baseline queries detected
+    }
+
+    const baselineInfo = this.config.baselineQueries;
+    core.info('Auto-configuring enforcement based on official Baseline queries');
+
+    // Create enhanced enforcement configuration
+    const enhancedEnforcement = {
+      'baseline-query-mode': true,
+      'detected-queries': baselineInfo.queries
+    };
+
+    // Configure based on query types
+    if (baselineInfo.types.includes('yearly') && baselineInfo.years.length > 0) {
+      // If using year-based queries, auto-configure yearly enforcement
+      enhancedEnforcement.mode = 'yearly';
+      enhancedEnforcement['auto-yearly-rules'] = this.generateYearlyRulesFromQueries(baselineInfo.years);
+      core.info(`Auto-configured yearly enforcement for years: ${baselineInfo.years.join(', ')}`);
+    } else if (baselineInfo.types.includes('widely')) {
+      // If using "widely available", focus on strict enforcement
+      enhancedEnforcement.mode = 'per-feature';
+      enhancedEnforcement['baseline-threshold'] = 'widely';
+      core.info('Auto-configured strict enforcement for "widely available" features');
+    } else if (baselineInfo.types.includes('newly')) {
+      // If using "newly available", use balanced enforcement
+      enhancedEnforcement.mode = 'per-feature';
+      enhancedEnforcement['baseline-threshold'] = 'newly';
+      core.info('Auto-configured balanced enforcement for "newly available" features');
+    }
+
+    // Merge the enhanced enforcement into config
+    if (!this.config.enforcement) {
+      this.config.enforcement = {};
+    }
+    Object.assign(this.config.enforcement, enhancedEnforcement);
+  }
+
+  /**
+   * Generate yearly enforcement rules based on detected Baseline year queries
+   * @param {Array<number>} years - Years detected from baseline queries
+   * @returns {Object} Yearly enforcement rules
+   */
+  generateYearlyRulesFromQueries(years) {
+    const rules = {};
+    const currentYear = new Date().getFullYear();
+    
+    // For each detected year, create appropriate enforcement levels
+    for (const year of years) {
+      const age = currentYear - year;
+      
+      if (age >= 3) {
+        rules[year] = 'error';  // 3+ years old: strict enforcement
+      } else if (age >= 2) {
+        rules[year] = 'warn';   // 2+ years old: warnings
+      } else if (age >= 1) {
+        rules[year] = 'info';   // 1+ years old: informational
+      } else {
+        rules[year] = 'off';    // Current year: no enforcement
+      }
+    }
+
+    // Add intelligent rules for years not explicitly specified
+    // Assume stricter enforcement for older years
+    const minYear = Math.min(...years);
+    for (let year = minYear - 2; year < minYear; year++) {
+      if (year >= 2015) { // Don't go too far back
+        rules[year] = 'error';
+      }
+    }
+
+    // Add lenient rules for newer years
+    const maxYear = Math.max(...years);
+    for (let year = maxYear + 1; year <= currentYear; year++) {
+      const age = currentYear - year;
+      if (age >= 1) {
+        rules[year] = 'info';
+      } else {
+        rules[year] = 'off';
+      }
+    }
+
+    return rules;
   }
 
   /**

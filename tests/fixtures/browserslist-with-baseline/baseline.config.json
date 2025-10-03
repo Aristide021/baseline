@@ -1,0 +1,6 @@
+{
+  "targets": ["chrome >= 120", "firefox >= 120"],
+  "enforcement": {
+    "mode": "yearly"
+  }
+}

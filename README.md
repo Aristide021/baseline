@@ -4,13 +4,14 @@ Automatically enforce web platform feature compatibility standards in your CI/CD
 
 ## Features
 
+- 🆕 **Official Baseline Queries**: First GitHub Action to support the new web.dev Baseline syntax (`baseline 2022`, `baseline widely available`)
 - 🔍 **Comprehensive Feature Detection**: Analyzes CSS, JavaScript, and HTML files for web platform features
 - 📊 **Baseline Status Resolution**: Queries web-features data to determine compatibility status  
-- 🛡️ **Policy Enforcement**: Evaluates detected features against configurable compliance rules
+- 🛡️ **Intelligent Policy Enforcement**: Auto-configures enforcement from official Baseline queries with 4 enforcement modes
 - 📄 **Detailed Reporting**: Generates violation reports with remediation guidance
 - 🔗 **GitHub Integration**: Provides status checks, PR comments, and workflow controls
 - ⚡ **Performance Optimized**: Caches Baseline data and analyzes only changed files
-- 🛠️ **Highly Configurable**: Supports multiple configuration methods and custom rules
+- 🛠️ **Highly Configurable**: Supports browserslist integration and custom rules
 
 ## Quick Start
 
@@ -81,6 +82,44 @@ jobs:
           name: baseline-report
           path: baseline-report.md
 ```
+
+## Official Baseline Queries Support 🆕
+
+**First GitHub Action to support the new official Baseline syntax!**
+
+As announced in the [September 16, 2025 web.dev article](https://web.dev/blog/browserslist-baseline), Browserslist now supports official Baseline queries. This action automatically detects and intelligently configures enforcement based on these queries.
+
+### Supported Queries
+
+```
+# .browserslistrc
+baseline widely available     # 30+ months interoperable
+baseline newly available      # ≤30 months interoperable  
+baseline 2022                # Features from 2022 and older
+baseline widely available on 2024-06-06  # Specific date
+```
+
+### Auto-Configuration
+
+| Query Type | Enforcement Mode | Effect |
+|------------|------------------|--------|
+| `baseline 2022` | `yearly` | Age-based rules: 3+ years=error, 2+ years=warn |
+| `baseline widely available` | `per-feature` | Strict threshold=widely |
+| `baseline newly available` | `per-feature` | Balanced threshold=newly |
+
+### Example Usage
+
+```yaml
+# .browserslistrc
+baseline 2022
+
+# No additional configuration needed!
+# Action auto-configures yearly enforcement
+```
+
+**Result:** Features from 2022+ are enforced based on age, with 2022 features marked as errors and newer features as warnings or info.
+
+[📚 Full Official Baseline Queries Documentation](./examples/official-baseline-queries.md)
 
 ## Configuration
 

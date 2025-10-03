@@ -1,6 +1,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const core = require('@actions/core');
+const browserslist = require('browserslist');
 
 /**
  * Loads and validates Baseline configuration from various sources
@@ -87,13 +88,19 @@ class ConfigLoader {
       configs.push(packageConfig);
     }
 
-    // 4. Load GitHub Action inputs
+    // 4. Load browserslist configuration (only if no targets specified yet)
+    const browserslistConfig = await this.loadBrowserslistConfig(configs);
+    if (browserslistConfig) {
+      configs.push(browserslistConfig);
+    }
+
+    // 5. Load GitHub Action inputs
     const actionConfig = this.loadActionInputs();
     if (actionConfig) {
       configs.push(actionConfig);
     }
 
-    // 5. Load environment variables
+    // 6. Load environment variables
     const envConfig = this.loadEnvironmentConfig();
     if (envConfig) {
       configs.push(envConfig);
@@ -206,6 +213,146 @@ class ConfigLoader {
     }
     
     return null;
+  }
+
+  /**
+   * Load browser targets from browserslist configuration
+   * @param {Array} existingConfigs - Already loaded configurations
+   * @returns {Promise<Object|null>} Configuration object or null
+   */
+  async loadBrowserslistConfig(existingConfigs) {
+    // Check if targets are already specified in existing configs
+    const hasExistingTargets = existingConfigs.some(config => 
+      config.targets || config.browsers || config.browserslist
+    );
+    
+    if (hasExistingTargets) {
+      core.debug('Browser targets already specified, skipping browserslist');
+      return null;
+    }
+
+    try {
+      // Try to load browserslist configuration
+      const browsers = browserslist(undefined, {
+        path: this.options.workingDirectory
+      });
+      
+      if (browsers && browsers.length > 0) {
+        // Check if this is using official Baseline queries
+        const browserslistConfig = this.getBrowserslistQueries();
+        const baselineInfo = this.detectBaselineQueries(browserslistConfig);
+        
+        core.info('Loading browser targets from browserslist configuration');
+        core.debug(`Browserslist targets: ${browsers.join(', ')}`);
+        
+        const config = {
+          targets: browsers,
+          targetSource: 'browserslist'
+        };
+        
+        // Add Baseline metadata if detected
+        if (baselineInfo.hasBaselineQueries) {
+          config.baselineQueries = baselineInfo;
+          core.info(`Detected official Baseline queries: ${baselineInfo.queries.join(', ')}`);
+        }
+        
+        return config;
+      }
+    } catch (error) {
+      // browserslist throws if no config found, which is fine
+      core.debug(`No browserslist configuration found: ${error.message}`);
+    }
+    
+    return null;
+  }
+
+  /**
+   * Get browserslist queries from configuration files
+   * @returns {Array<string>} Array of browserslist queries
+   */
+  getBrowserslistQueries() {
+    try {
+      // Try to read browserslist config files directly to get the raw queries
+      const fs = require('fs');
+      const possiblePaths = [
+        path.join(this.options.workingDirectory, '.browserslistrc'),
+        path.join(this.options.workingDirectory, 'package.json')
+      ];
+      
+      for (const configPath of possiblePaths) {
+        try {
+          if (fs.existsSync(configPath)) {
+            if (configPath.endsWith('.browserslistrc')) {
+              const content = fs.readFileSync(configPath, 'utf8');
+              return content.trim().split('\n').map(line => line.trim()).filter(line => line && !line.startsWith('#'));
+            } else if (configPath.endsWith('package.json')) {
+              const content = fs.readFileSync(configPath, 'utf8');
+              const packageJson = JSON.parse(content);
+              if (packageJson.browserslist) {
+                return Array.isArray(packageJson.browserslist) ? packageJson.browserslist : [packageJson.browserslist];
+              }
+            }
+          }
+        } catch (error) {
+          core.debug(`Failed to read browserslist config from ${configPath}: ${error.message}`);
+        }
+      }
+    } catch (error) {
+      core.debug(`Error reading browserslist configuration: ${error.message}`);
+    }
+    
+    return [];
+  }
+
+  /**
+   * Detect and parse official Baseline queries
+   * @param {Array<string>} queries - Browserslist queries
+   * @returns {Object} Baseline query information
+   */
+  detectBaselineQueries(queries) {
+    const baselineInfo = {
+      hasBaselineQueries: false,
+      queries: [],
+      types: [],
+      years: [],
+      dates: []
+    };
+    
+    for (const query of queries) {
+      const trimmed = query.trim().toLowerCase();
+      
+      // Detect different types of baseline queries
+      if (trimmed.startsWith('baseline')) {
+        baselineInfo.hasBaselineQueries = true;
+        baselineInfo.queries.push(query);
+        
+        if (trimmed.includes('widely available')) {
+          baselineInfo.types.push('widely');
+          
+          // Check for specific date
+          const dateMatch = trimmed.match(/on (\d{4}-\d{2}-\d{2})/);
+          if (dateMatch) {
+            baselineInfo.dates.push(dateMatch[1]);
+          }
+        } else if (trimmed.includes('newly available')) {
+          baselineInfo.types.push('newly');
+        } else {
+          // Check for year-based queries (e.g., "baseline 2022")
+          const yearMatch = trimmed.match(/baseline (\d{4})/);
+          if (yearMatch) {
+            baselineInfo.types.push('yearly');
+            baselineInfo.years.push(parseInt(yearMatch[1], 10));
+          }
+        }
+      }
+    }
+    
+    // Remove duplicates
+    baselineInfo.types = [...new Set(baselineInfo.types)];
+    baselineInfo.years = [...new Set(baselineInfo.years)].sort();
+    baselineInfo.dates = [...new Set(baselineInfo.dates)];
+    
+    return baselineInfo;
   }
 
   /**

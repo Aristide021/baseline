@@ -1,0 +1,30 @@
+{
+  "$schema": "https://baseline.dev/schemas/config.json",
+  "targets": ["baseline widely available"],
+  "enforcement": {
+    "mode": "per-feature",
+    "comment": "Auto-configured from 'baseline widely available' query",
+    "baseline-query-mode": true,
+    "detected-queries": ["baseline widely available"],
+    "baseline-threshold": "widely",
+    "strict-mode": true
+  },
+  "rules": {
+    "css": {
+      "baseline-threshold": "widely",
+      "strict-mode": true
+    },
+    "javascript": {
+      "baseline-threshold": "widely", 
+      "strict-mode": true
+    },
+    "html": {
+      "baseline-threshold": "widely"
+    }
+  },
+  "reporting": {
+    "include-baseline-context": true,
+    "show-query-alignment": true,
+    "include-compatibility-data": true
+  }
+}

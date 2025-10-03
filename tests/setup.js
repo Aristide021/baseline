@@ -88,6 +88,9 @@ jest.mock('web-features', () => ({
   }
 }), { virtual: true });
 
+// Mock browserslist
+jest.mock('browserslist', () => jest.fn());
+
 // Mock file system operations for testing
 const mockFs = {
   readFile: jest.fn(),
