@@ -62,4 +62,7 @@
   anchor-name: --header;
   position: absolute;
   top: anchor(bottom);
+  
+  /* Test addition to trigger workflow */
+  color-scheme: light dark;
 }
