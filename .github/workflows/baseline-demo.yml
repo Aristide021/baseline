@@ -20,17 +20,26 @@ jobs:
       - name: Checkout Demo Branch
         uses: actions/checkout@v4
         
-      - name: 🆕 Run Baseline Check with Official Queries
-        uses: Aristide021/baseline@v1.0.0
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          comment-on-pr: true
-          output-format: 'json'
-          sarif-output: 'baseline-results.sarif'
+          node-version: '20'
+          
+      - name: Install Dependencies
+        run: npm install
+        
+      - name: 🆕 Run Baseline Check with Official Queries
+        run: node src/index.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_COMMENT_ON_PR: 'true'
+          INPUT_OUTPUT_FORMAT: 'json'
+          INPUT_SARIF_OUTPUT: 'baseline-results.sarif'
           
       - name: 📊 Upload SARIF to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: always() && hashFiles('baseline-results.sarif') != ''
         with:
           sarif_file: 'baseline-results.sarif'
           category: 'baseline-compatibility-demo'
