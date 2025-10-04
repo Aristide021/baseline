@@ -50,7 +50,7 @@ jobs:
           
       - name: 📁 Upload Demo Report
         uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && hashFiles('baseline-report.json') != ''
         with:
           name: baseline-demo-report
           path: |

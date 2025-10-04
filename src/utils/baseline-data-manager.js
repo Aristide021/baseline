@@ -29,7 +29,7 @@ class BaselineDataManager {
         this.fallbackData = JSON.parse(fallbackContent);
         core.debug('Loaded fallback Baseline data');
       } catch (error) {
-        core.warning('No fallback Baseline data available');
+        core.debug('No fallback Baseline data available (using API)');
       }
 
       // Ensure cache directory exists
