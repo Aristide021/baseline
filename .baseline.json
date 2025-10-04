@@ -1,0 +1,39 @@
+{
+  "rules": {
+    "css": {
+      "baseline-threshold": "widely",
+      "strict-mode": true,
+      "allowed-exceptions": []
+    },
+    "javascript": {
+      "baseline-threshold": "widely", 
+      "strict-mode": true,
+      "allowed-exceptions": []
+    },
+    "html": {
+      "baseline-threshold": "widely",
+      "allowed-exceptions": []
+    }
+  },
+  "enforcement": {
+    "mode": "per-feature",
+    "max-violations": 0,
+    "fail-on-new-only": false,
+    "severity-weights": {
+      "high": 1.0,
+      "medium": 1.0,
+      "low": 1.0
+    }
+  },
+  "reporting": {
+    "include-remediation": true,
+    "group-by-feature": true,
+    "show-polyfill-suggestions": true,
+    "output-format": "json"
+  },
+  "github": {
+    "comment-on-pr": true,
+    "create-status-check": true,
+    "status-check-name": "Baseline Enforcement Demo"
+  }
+}

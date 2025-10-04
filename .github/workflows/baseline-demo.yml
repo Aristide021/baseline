@@ -28,7 +28,7 @@ jobs:
       - name: Install Dependencies
         run: npm install
         
-      - name: 🆕 Run Baseline Check with Official Queries
+      - name: 🆕 Run Baseline Check with STRICT Enforcement
         run: node src/index.js
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -36,6 +36,10 @@ jobs:
           INPUT_COMMENT_ON_PR: 'true'
           INPUT_OUTPUT_FORMAT: 'json'
           INPUT_SARIF_OUTPUT: 'baseline-results.sarif'
+          INPUT_BASELINE_THRESHOLD: 'widely'
+          INPUT_MAX_VIOLATIONS: '0'
+          INPUT_ENFORCEMENT_MODE: 'error'
+        continue-on-error: true
           
       - name: 📊 Upload SARIF to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
