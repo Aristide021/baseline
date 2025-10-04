@@ -1,0 +1,50 @@
+/* Demo CSS with various Baseline status features */
+
+/* Widely available features (30+ months interoperable) */
+.container {
+  display: grid; /* Baseline: Widely available since 2017 */
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: linear-gradient(45deg, #blue, #purple); /* Baseline: Widely available */
+  border-radius: 8px; /* Baseline: Widely available */
+  padding: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Baseline: Widely available */
+}
+
+/* Newly available features (≤30 months interoperable) */
+.modern-layout {
+  container-type: inline-size; /* Baseline: Newly available (2023) */
+  container-name: card;
+}
+
+@container card (min-width: 300px) {
+  .card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+/* Features that should trigger warnings/errors based on year */
+.cutting-edge {
+  view-transition-name: slide; /* Baseline: Not yet available */
+  anchor-name: --my-anchor; /* Baseline: Limited availability */
+}
+
+/* 2022 features (should be enforced based on our baseline 2022 query) */
+.accent-color-demo {
+  accent-color: #007acc; /* Baseline: 2022 */
+}
+
+.aspect-ratio-demo {
+  aspect-ratio: 16 / 9; /* Baseline: 2022 */
+}
+
+/* Focus-visible for better accessibility */
+.button:focus-visible {
+  outline: 2px solid #007acc; /* Baseline: 2021 */
+  outline-offset: 2px;
+}

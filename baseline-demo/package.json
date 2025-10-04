@@ -1,0 +1,13 @@
+{
+  "name": "baseline-demo",
+  "version": "1.0.0",
+  "description": "Demo repository showcasing Baseline GitHub Action with official Baseline queries",
+  "main": "src/index.html",
+  "scripts": {
+    "dev": "serve src",
+    "build": "echo 'Demo build complete'"
+  },
+  "keywords": ["baseline", "web-features", "compatibility", "github-action"],
+  "author": "Baseline GitHub Action",
+  "license": "MIT"
+}

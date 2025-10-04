@@ -1,0 +1,65 @@
+/* 
+ * Baseline Demo Styles
+ * Features from different baseline status levels
+ */
+
+/* ✅ Widely Available Features (30+ months interoperable) */
+.layout-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.custom-properties {
+  --primary-color: #3498db;
+  --secondary-color: #2ecc71;
+  color: var(--primary-color);
+  background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+}
+
+.modern-flexbox {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 8px;
+}
+
+/* 🆕 Newly Available Features (≤30 months interoperable) */
+.container-queries {
+  container-type: inline-size;
+}
+
+@container (min-width: 400px) {
+  .container-queries .card {
+    display: flex;
+    flex-direction: row;
+  }
+}
+
+.advanced-selectors {
+  /* CSS :has() selector */
+  &:has(> .important) {
+    border: 2px solid red;
+  }
+}
+
+/* ⚠️ Age-Based Features (from baseline 2022) */
+.accent-styling {
+  accent-color: var(--primary-color);
+}
+
+.aspect-ratio-box {
+  aspect-ratio: 16 / 9;
+  background: #f0f0f0;
+}
+
+/* 🚧 Limited/Cutting-Edge Features */
+.experimental-features {
+  /* View Transitions (limited support) */
+  view-transition-name: main-content;
+  
+  /* CSS Anchor Positioning (cutting-edge) */
+  anchor-name: --header;
+  position: absolute;
+  top: anchor(bottom);
+}

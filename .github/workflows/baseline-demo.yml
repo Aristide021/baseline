@@ -1,0 +1,46 @@
+name: 🎯 Baseline Demo
+
+on:
+  push:
+    branches: [ demo ]
+  pull_request:
+    branches: [ demo ]
+    paths:
+      - 'src/**'
+      - '*.html'
+      - '*.css'
+      - '*.js'
+
+jobs:
+  baseline-demo:
+    runs-on: ubuntu-latest
+    name: Official Baseline Queries Demo
+    
+    steps:
+      - name: Checkout Demo Branch
+        uses: actions/checkout@v4
+        
+      - name: 🆕 Run Baseline Check with Official Queries
+        uses: Aristide021/baseline@v1.0.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          comment-on-pr: true
+          output-format: 'json'
+          sarif-output: 'baseline-results.sarif'
+          
+      - name: 📊 Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'baseline-results.sarif'
+          category: 'baseline-compatibility-demo'
+          
+      - name: 📁 Upload Demo Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: baseline-demo-report
+          path: |
+            baseline-report.json
+            baseline-report.md
+            baseline-results.sarif

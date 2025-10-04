@@ -1,0 +1,30 @@
+name: Baseline Compatibility Check
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  baseline-check:
+    runs-on: ubuntu-latest
+    name: Check Web Platform Feature Compatibility
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Run Baseline GitHub Action
+        uses: Aristide021/baseline@main
+        with:
+          # No explicit configuration needed!
+          # Action auto-configures from .browserslistrc with official Baseline queries
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Upload baseline report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: baseline-report
+          path: baseline-report.md
