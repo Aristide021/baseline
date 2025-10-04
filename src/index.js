@@ -1,7 +1,7 @@
 const core = require('@actions/core');
 const fs = require('fs').promises;
 const path = require('path');
-const glob = require('glob');
+const { glob } = require('glob');
 
 // Import our modules
 const ConfigLoader = require('./utils/config-loader');
@@ -166,17 +166,15 @@ class BaselineAction {
     const allFiles = [];
     
     for (const pattern of patterns) {
-      const files = await new Promise((resolve, reject) => {
-        glob(pattern, { 
+      try {
+        const files = await glob(pattern, { 
           cwd: process.cwd(),
           ignore: this.config.enforcement['ignore-patterns'] || []
-        }, (err, matches) => {
-          if (err) reject(err);
-          else resolve(matches);
         });
-      });
-      
-      allFiles.push(...files);
+        allFiles.push(...files);
+      } catch (err) {
+        core.warning(`Failed to glob pattern ${pattern}: ${err.message}`);
+      }
     }
     
     // Remove duplicates and sort
