@@ -186,19 +186,19 @@ function createRuleId(violation) {
  */
 function mapSeverityToLevel(severity) {
   switch (severity?.toLowerCase()) {
-    case 'error':
-    case 'limited':
-      return 'error';
-    case 'warning':
-    case 'warn':
-    case 'newly':
-      return 'warning';
-    case 'info':
-    case 'note':
-    case 'widely':
-      return 'note';
-    default:
-      return 'warning';
+  case 'error':
+  case 'limited':
+    return 'error';
+  case 'warning':
+  case 'warn':
+  case 'newly':
+    return 'warning';
+  case 'info':
+  case 'note':
+  case 'widely':
+    return 'note';
+  default:
+    return 'warning';
   }
 }
 

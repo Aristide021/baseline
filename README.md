@@ -121,6 +121,32 @@ baseline 2022
 
 [📚 Full Official Baseline Queries Documentation](./examples/official-baseline-queries.md)
 
+## 🎯 Try the Interactive Demo
+
+Experience the action in action with our comprehensive demo branch:
+
+### [👉 View Demo Branch](https://github.com/Aristide021/baseline/tree/demo)
+
+**What you'll see:**
+- 🆕 **Official Baseline queries** (`baseline 2022`, `baseline widely available`) 
+- 🤖 **Zero-config auto-setup** from `.browserslistrc`
+- 📊 **SARIF integration** with GitHub Advanced Security
+- 🔍 **Real feature detection** across CSS, JavaScript, and HTML
+
+### Quick Demo Trial
+
+```bash
+# Fork this repository, then:
+git checkout demo
+echo "/* Add experimental feature */" >> src/styles.css
+git add . && git commit -m "test: trigger baseline check"
+git push origin demo
+
+# Watch the GitHub Action run automatically! 🎉
+```
+
+**See it live:** The demo showcases features from widely available (CSS Grid) to cutting-edge (View Transitions API), with automatic enforcement based on your official Baseline queries.
+
 ## SARIF Support for GitHub Advanced Security 🛡️
 
 Generate SARIF output for integration with GitHub Advanced Security code scanning:
