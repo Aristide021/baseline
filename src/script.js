@@ -62,13 +62,8 @@ class BaselineDemo {
 
   // 🆕 Newly Available Features (≤30 months interoperable)
   demonstrateModernFeatures() {
-    // Private class fields (newly available)
-    #privateField = 'This is private';
-    
-    // Static initialization blocks (newly available)
-    static {
-      console.log('Static block executed');
-    }
+    // Note: Private class fields and static blocks are demonstrated in ModernFeatureClass below
+    console.log('Modern features demonstration');
     
     // Top-level await (newly available in modules)
     // Note: This would only work in module context
@@ -123,8 +118,31 @@ class BaselineDemo {
   }
 }
 
+// 🆕 Modern Feature Class (demonstrates private fields and static blocks)
+class ModernFeatureClass {
+  // Private class fields (newly available)
+  #privateField = 'This is private';
+  
+  // Static initialization blocks (newly available)
+  static {
+    console.log('Static block executed in ModernFeatureClass');
+  }
+  
+  #privateMethod() {
+    return this.#privateField;
+  }
+  
+  getPrivateValue() {
+    return this.#privateMethod();
+  }
+}
+
 // Initialize demo when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
   const demo = new BaselineDemo();
   window.baselineDemo = demo; // For debugging
+  
+  // Demonstrate modern features
+  const modernFeatures = new ModernFeatureClass();
+  console.log('Private field demo:', modernFeatures.getPrivateValue());
 });

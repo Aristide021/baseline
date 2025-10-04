@@ -250,7 +250,19 @@ Check the PR comment or full report for detailed information about violations an
     try {
       // Limit annotations to prevent overwhelming the UI
       const maxAnnotations = 50;
-      const annotationsToAdd = violations.slice(0, maxAnnotations);
+      
+      // Deduplicate violations by feature and file to prevent duplicate warnings
+      const seenViolations = new Set();
+      const uniqueViolations = violations.filter(violation => {
+        const key = `${violation.feature.featureId}-${violation.feature.file}-${violation.feature.location.line || 1}`;
+        if (seenViolations.has(key)) {
+          return false;
+        }
+        seenViolations.add(key);
+        return true;
+      });
+      
+      const annotationsToAdd = uniqueViolations.slice(0, maxAnnotations);
 
       for (const violation of annotationsToAdd) {
         const feature = violation.feature;
@@ -289,8 +301,12 @@ Check the PR comment or full report for detailed information about violations an
         }
       }
 
-      if (violations.length > maxAnnotations) {
-        core.warning(`Added ${maxAnnotations} annotations out of ${violations.length} violations. See full report for complete details.`);
+      if (uniqueViolations.length > maxAnnotations) {
+        core.warning(`Added ${maxAnnotations} annotations out of ${uniqueViolations.length} unique violations. See full report for complete details.`);
+      }
+      
+      if (violations.length > uniqueViolations.length) {
+        core.debug(`Deduplicated ${violations.length - uniqueViolations.length} duplicate violation(s) for cleaner output`);
       }
 
       core.debug(`Added ${annotationsToAdd.length} workflow annotations`);
