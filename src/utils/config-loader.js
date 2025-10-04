@@ -519,7 +519,7 @@ class ConfigLoader {
     }
 
     // Validate output format
-    const validFormats = ['markdown', 'json', 'html'];
+    const validFormats = ['markdown', 'json', 'html', 'sarif'];
     if (config.reporting?.['output-format'] && 
         !validFormats.includes(config.reporting['output-format'])) {
       errors.push(`Invalid output format: ${config.reporting['output-format']}`);
@@ -639,7 +639,7 @@ class ConfigLoader {
           properties: {
             'include-remediation': { type: 'boolean' },
             'group-by-feature': { type: 'boolean' },
-            'output-format': { enum: ['markdown', 'json', 'html'] }
+            'output-format': { enum: ['markdown', 'json', 'html', 'sarif'] }
           }
         }
       }

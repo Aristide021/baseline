@@ -1,5 +1,5 @@
-name: 'Baseline'
-description: 'Enforce web platform feature compatibility standards in CI/CD'
+name: 'Baseline Web Platform Compatibility'
+description: 'Enforce web platform feature compatibility standards in CI/CD with official Baseline queries support'
 author: 'baseline'
 branding:
   icon: 'shield'
@@ -55,6 +55,16 @@ inputs:
     description: 'GitHub token for API access'
     required: false
     default: ${{ github.token }}
+  
+  output-format:
+    description: 'Output format for reports (json|markdown|sarif)'
+    required: false
+    default: 'json'
+  
+  sarif-output:
+    description: 'Path to write SARIF output for GitHub Advanced Security'
+    required: false
+    default: ''
 
 outputs:
   violations-count:
@@ -68,6 +78,9 @@ outputs:
   
   report-path:
     description: 'Path to the generated report file'
+  
+  sarif-path:
+    description: 'Path to the generated SARIF file (if sarif-output was specified)'
 
 runs:
   using: 'node20'

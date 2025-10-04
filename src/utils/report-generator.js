@@ -1,6 +1,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const core = require('@actions/core');
+const { generateSarif } = require('./sarif-formatter');
 
 /**
  * Generates detailed reports for Baseline compliance violations
@@ -44,6 +45,8 @@ class ReportGenerator {
       return this.generateMarkdownReport(reportData);
     case 'json':
       return this.generateJSONReport(reportData);
+    case 'sarif':
+      return this.generateSARIFReport(reportData);
     case 'html':
       return this.generateHTMLReport(reportData);
     default:
@@ -371,6 +374,24 @@ Found ${fileViolations.length} violation${fileViolations.length !== 1 ? 's' : ''
    */
   generateJSONReport(reportData) {
     return JSON.stringify(reportData, null, 2);
+  }
+
+  /**
+   * Generate SARIF report
+   * @param {Object} reportData - Report data
+   * @returns {string} SARIF report
+   */
+  generateSARIFReport(reportData) {
+    const { violations, metadata } = reportData;
+    
+    const sarifMetadata = {
+      version: metadata.actionVersion || '1.0.0',
+      baselineQueries: metadata.baselineQueries || [],
+      autoConfigured: metadata.autoConfigured || false,
+      enforcementMode: metadata.enforcementMode || 'per-feature'
+    };
+    
+    return generateSarif(violations, sarifMetadata);
   }
 
   /**

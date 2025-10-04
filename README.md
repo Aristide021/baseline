@@ -121,6 +121,50 @@ baseline 2022
 
 [📚 Full Official Baseline Queries Documentation](./examples/official-baseline-queries.md)
 
+## SARIF Support for GitHub Advanced Security 🛡️
+
+Generate SARIF output for integration with GitHub Advanced Security code scanning:
+
+### Basic SARIF Usage
+
+```yaml
+- name: Run Baseline Check
+  uses: Aristide021/baseline@v1.0.0
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+    sarif-output: 'baseline-results.sarif'
+
+- name: Upload SARIF to GitHub Security
+  uses: github/codeql-action/upload-sarif@v3
+  if: always()
+  with:
+    sarif_file: 'baseline-results.sarif'
+```
+
+### Advanced SARIF Configuration
+
+```yaml
+- name: Run Baseline Check with SARIF
+  uses: Aristide021/baseline@v1.0.0
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+    output-format: 'sarif'           # Primary output as SARIF
+    sarif-output: 'security/baseline.sarif'  # Additional SARIF for security tab
+
+- name: Upload to Security Tab
+  uses: github/codeql-action/upload-sarif@v3
+  if: always()
+  with:
+    sarif_file: 'security/baseline.sarif'
+    category: 'baseline-compatibility'
+```
+
+**Benefits:**
+- 🔍 **Unified Security View** - See Baseline issues alongside other security findings
+- 📊 **Trend Analysis** - Track compatibility improvements over time  
+- 🎯 **Integrated Workflow** - Works with GitHub's native security features
+- 📈 **Compliance Reporting** - Generate security compliance reports
+
 ## Configuration
 
 ### Input Parameters
@@ -135,6 +179,8 @@ baseline 2022
 | `comment-on-pr` | Post detailed PR comments | `true` |
 | `fail-on-new-only` | Only fail on newly introduced violations | `false` |
 | `config-path` | Path to configuration file | `.baseline.json` |
+| `output-format` | Output format (`json`\|`markdown`\|`sarif`) | `json` |
+| `sarif-output` | Path to write SARIF output for GitHub Advanced Security | _(none)_ |
 
 ### Configuration File
 

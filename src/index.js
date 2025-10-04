@@ -387,8 +387,18 @@ class BaselineAction {
       baseline: {
         threshold: this.config.rules?.css?.['baseline-threshold'] || 'newly'
       },
-      actionVersion: '1.0.0'
+      actionVersion: '1.0.0',
+      baselineQueries: this.config.baselineQueries?.queries || [],
+      autoConfigured: this.config.baselineQueries?.hasBaselineQueries || false,
+      enforcementMode: this.config.enforcement?.mode || 'per-feature'
     };
+    
+    // Get output format from input
+    const outputFormat = core.getInput('output-format') || 'json';
+    const sarifOutputPath = core.getInput('sarif-output');
+    
+    // Configure report generator with requested format
+    this.reportGenerator.options.outputFormat = outputFormat;
     
     // Generate main report
     const reportContent = await this.reportGenerator.generateReport(
@@ -397,9 +407,26 @@ class BaselineAction {
       metadata
     );
     
-    // Save report to file
-    const reportPath = path.join(process.cwd(), 'baseline-report.md');
+    // Save main report to file
+    const reportExtension = outputFormat === 'sarif' ? 'sarif' : (outputFormat === 'json' ? 'json' : 'md');
+    const reportPath = path.join(process.cwd(), `baseline-report.${reportExtension}`);
     await this.reportGenerator.saveReport(reportContent, reportPath);
+    
+    // Generate SARIF output if requested
+    if (sarifOutputPath) {
+      core.info('📊 Generating SARIF output for GitHub Advanced Security...');
+      
+      // Create SARIF report generator
+      const sarifGenerator = new ReportGenerator({ ...this.config.reporting, outputFormat: 'sarif' });
+      const sarifContent = await sarifGenerator.generateReport(this.violations, this.summary, metadata);
+      
+      // Save SARIF to specified path
+      const resolvedSarifPath = path.resolve(process.cwd(), sarifOutputPath);
+      await sarifGenerator.saveReport(sarifContent, resolvedSarifPath);
+      
+      core.setOutput('sarif-path', resolvedSarifPath);
+      core.info(`📊 SARIF report saved to ${resolvedSarifPath}`);
+    }
     
     // Set outputs for other actions to use
     core.setOutput('report-path', reportPath);
