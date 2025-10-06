@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="assets/baseline-logo.svg" alt="Baseline GitHub Action" width="400">
+</div>
+
 # Baseline GitHub Action
 
 Automatically enforce web platform feature compatibility standards in your CI/CD pipeline. Unlike existing linting tools that provide suggestions, Baseline acts as a compliance gatekeeper, preventing non-compliant code from reaching production environments.
