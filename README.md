@@ -39,7 +39,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Check Baseline Compliance
-        uses: baseline/action@v1
+        uses: Aristide021/baseline@v1.0.0
         with:
           baseline-threshold: 'newly'
           enforcement-mode: 'error'
@@ -74,7 +74,7 @@ jobs:
           key: baseline-${{ hashFiles('.baseline.json') }}
       
       - name: Baseline Check
-        uses: baseline/action@v1
+        uses: Aristide021/baseline@v1.0.0
         with:
           baseline-threshold: 'newly'
           fail-on-new-only: true
@@ -93,7 +93,7 @@ jobs:
 
 **First GitHub Action to support the new official Baseline syntax!**
 
-As announced in the [September 16, 2025 web.dev article](https://web.dev/blog/browserslist-baseline), Browserslist now supports official Baseline queries. This action automatically detects and intelligently configures enforcement based on these queries.
+Building on the emerging Browserslist Baseline query support, this action automatically detects and intelligently configures enforcement based on these official queries.
 
 ### Supported Queries
 
@@ -396,10 +396,5 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## Support
-
-- 📖 [Documentation](https://docs.baseline.dev)
-- 🐛 [Report Issues](https://github.com/baseline/action/issues)
-- 💬 [Discussions](https://github.com/baseline/action/discussions)
-- 📧 [Email Support](mailto:support@baseline.dev)# Trigger dual demo workflow
+# Trigger dual demo workflow
 # Trigger comprehensive dual scenario test
