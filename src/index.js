@@ -83,7 +83,13 @@ class BaselineAction {
     try {
       // Load configuration
       core.info('📋 Loading configuration...');
-      const configLoader = new ConfigLoader();
+      const configPath = core.getInput('config-path') || process.env.INPUT_CONFIG_PATH;
+      if (configPath) {
+        core.info(`🔧 Using custom config path: ${configPath}`);
+      }
+      const configLoader = new ConfigLoader({
+        configFileName: configPath || '.baseline.json'
+      });
       this.config = await configLoader.loadConfig();
       
       // Initialize Baseline data manager
