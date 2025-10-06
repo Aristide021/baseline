@@ -1,0 +1,20 @@
+{
+  "rules": {
+    "css": {
+      "baseline-threshold": "widely",
+      "strict-mode": true
+    }
+  },
+  "enforcement": {
+    "include-patterns": [
+      "src/risky-features.css",
+      "index.html",
+      "enforcement-demo.html"
+    ],
+    "mode": "per-feature"
+  },
+  "reporting": {
+    "outputFormat": "json",
+    "includeDetails": true
+  }
+}

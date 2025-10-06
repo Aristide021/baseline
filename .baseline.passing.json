@@ -1,0 +1,23 @@
+{
+  "rules": {
+    "css": {
+      "baseline-threshold": "newly",
+      "allowed-exceptions": [
+        {
+          "feature": "backdrop-filter"
+        }
+      ]
+    }
+  },
+  "enforcement": {
+    "include-patterns": [
+      "src/safe-script.js",
+      "src/style.css"
+    ],
+    "mode": "per-feature"
+  },
+  "reporting": {
+    "outputFormat": "json",
+    "includeDetails": true
+  }
+}
