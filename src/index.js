@@ -420,9 +420,33 @@ class BaselineAction {
         core.debug(`Computing mapping coverage for ${this.allFeatures.length} features`);
         const mappedDetected = this.allFeatures.filter(f => {
           if (!f.featureId) return false;
-          const info = this.baselineDataManager.getFeatureInfo(f.featureId);
-          core.debug(`Feature ${f.featureId}: ${info ? 'mapped' : 'not mapped'}`);
-          return !!info;
+          
+          // Try exact match first
+          let info = this.baselineDataManager.getFeatureInfo(f.featureId);
+          if (info) {
+            core.debug(`Feature ${f.featureId}: mapped (exact)`);
+            return true;
+          }
+          
+          // Try common variations
+          const variations = [
+            f.featureId + '-property',
+            f.featureId + '-layout',
+            f.featureId.replace('-', '_'),
+            f.featureId.replace('_', '-'),
+            f.featureId.toLowerCase()
+          ];
+          
+          for (const variant of variations) {
+            info = this.baselineDataManager.getFeatureInfo(variant);
+            if (info) {
+              core.debug(`Feature ${f.featureId}: mapped (via ${variant})`);
+              return true;
+            }
+          }
+          
+          core.debug(`Feature ${f.featureId}: not mapped`);
+          return false;
         }).length;
         metadata.mappedDetected = mappedDetected;
         metadata.mappingCoveragePercent = this.allFeatures.length ? (mappedDetected / this.allFeatures.length * 100) : 0;
