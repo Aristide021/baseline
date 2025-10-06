@@ -1,9 +1,9 @@
-name: 'Baseline Web Platform Compatibility'
+name: 'Baseline Action'
 description: 'Enforce web platform feature compatibility standards in CI/CD with official Baseline queries support'
-author: 'baseline'
+author: 'Sheldon Aristide'
 branding:
   icon: 'shield'
-  color: 'blue'
+  color: 'green'
 
 inputs:
   baseline-threshold:
