@@ -12,6 +12,7 @@ Automatically enforce web platform feature compatibility standards in your CI/CD
 
 - 🆕 **Official Baseline Queries**: First GitHub Action to support the new web.dev Baseline syntax (`baseline 2022`, `baseline widely available`)
 - 🔍 **Comprehensive Feature Detection**: Analyzes CSS, JavaScript, and HTML files for web platform features
+- 🧩 **Framework Support**: Native support for React (.jsx/.tsx), Vue (.vue), Svelte (.svelte), and TypeScript
 - 📊 **Baseline Status Resolution**: Queries web-features data to determine compatibility status  
 - 🛡️ **Intelligent Policy Enforcement**: Auto-configures enforcement from official Baseline queries with 4 enforcement modes
 - 📄 **Detailed Reporting**: Generates violation reports with remediation guidance
