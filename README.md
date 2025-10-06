@@ -125,29 +125,22 @@ baseline 2022
 
 ## 🎯 Try the Interactive Demo
 
-Experience the action in action with our comprehensive demo branch:
+Experience the action with our comprehensive demo setup:
 
 ### [👉 View Demo Branch](https://github.com/Aristide021/baseline/tree/demo)
 
-**What you'll see:**
-- 🆕 **Official Baseline queries** (`baseline 2022`, `baseline widely available`) 
-- 🤖 **Zero-config auto-setup** from `.browserslistrc`
+**See the dual scenario demonstration:**
+- 🚨 **Strict Enforcement**: Shows violation detection with risky CSS features  
+- ✅ **Passing Compliance**: Demonstrates clean success with baseline-safe code
 - 📊 **SARIF integration** with GitHub Advanced Security
-- 🔍 **Real feature detection** across CSS, JavaScript, and HTML
+- 🔍 **86.3% mapping coverage** with alias resolution and synthetic features
 
-### Quick Demo Trial
+### Example Workflows
 
-```bash
-# Fork this repository, then:
-git checkout demo
-echo "/* Add experimental feature */" >> src/styles.css
-git add . && git commit -m "test: trigger baseline check"
-git push origin demo
-
-# Watch the GitHub Action run automatically! 🎉
-```
-
-**See it live:** The demo showcases features from widely available (CSS Grid) to cutting-edge (View Transitions API), with automatic enforcement based on your official Baseline queries.
+Ready-to-use workflow examples are in the [`examples/`](./examples/) directory:
+- **[`baseline-demo-workflow.yml`](./examples/baseline-demo-workflow.yml)**: Complete dual scenario demonstration
+- **[`basic-workflow.yml`](./examples/basic-workflow.yml)**: Simple getting started workflow  
+- **[`advanced-workflow.yml`](./examples/advanced-workflow.yml)**: Full-featured enterprise setup
 
 ## SARIF Support for GitHub Advanced Security 🛡️
 
