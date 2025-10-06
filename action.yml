@@ -21,6 +21,11 @@ inputs:
     required: false
     default: 'node_modules/**,dist/**,build/**'
   
+  scan-mode:
+    description: 'Scan scope mode (auto|diff|repo) - auto detects changed files in PR, diff only changed files, repo scans all files'
+    required: false
+    default: 'auto'
+  
   enforcement-mode:
     description: 'Enforcement level (warn|error|block)'
     required: false

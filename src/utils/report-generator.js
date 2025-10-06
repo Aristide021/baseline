@@ -494,12 +494,16 @@ Found ${fileViolations.length} violation${fileViolations.length !== 1 ? 's' : ''
    * @returns {string} GitHub comment content
    */
   generateGitHubComment(violations, summary, metadata = {}) {
+    // Add sticky marker for reliable comment updates
+    let comment = '<!-- baseline-comment -->\n';
+    
     if (violations.length === 0) {
-      return this.generateSuccessMarkdown(metadata);
+      comment += this.generateSuccessMarkdown(metadata);
+      return comment;
     }
 
     // Generate a condensed version for PR comments
-    let comment = this.generateMarkdownHeader(summary, metadata);
+    comment += this.generateMarkdownHeader(summary, metadata);
     comment += this.generateMarkdownSummary(summary, metadata);
     
     // Show top violations by file (limited)

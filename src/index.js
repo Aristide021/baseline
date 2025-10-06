@@ -126,22 +126,44 @@ class BaselineAction {
    */
   async getFilesToAnalyze() {
     let filesToAnalyze = [];
+    const scanMode = core.getInput('scan-mode') || 'auto';
     
     try {
-      if (this.githubIntegration) {
-        // Get changed files from GitHub if available
-        const changedFiles = await this.githubIntegration.getChangedFiles();
-        
-        if (changedFiles.length > 0) {
-          core.info(`📝 Analyzing ${changedFiles.length} changed files from PR/push`);
-          filesToAnalyze = changedFiles.map(file => file.filename);
-        }
-      }
-      
-      // If no changed files, analyze all files matching patterns
-      if (filesToAnalyze.length === 0) {
-        core.info('📁 No changed files detected, analyzing all matching files');
+      if (scanMode === 'repo') {
+        // Always scan all files regardless of changes
+        core.info('📁 Scan mode: repo - analyzing all matching files');
         filesToAnalyze = await this.getAllMatchingFiles();
+      } else if (scanMode === 'diff') {
+        // Only scan changed files, fail if none
+        if (this.githubIntegration) {
+          const changedFiles = await this.githubIntegration.getChangedFiles();
+          if (changedFiles.length > 0) {
+            core.info(`📝 Scan mode: diff - analyzing ${changedFiles.length} changed files`);
+            filesToAnalyze = changedFiles.map(file => file.filename);
+          } else {
+            core.warning('Scan mode: diff - no changed files found, analysis skipped');
+            return [];
+          }
+        } else {
+          core.warning('Scan mode: diff - no GitHub context available, falling back to repo mode');
+          filesToAnalyze = await this.getAllMatchingFiles();
+        }
+      } else {
+        // Auto mode: try changed files first, fallback to all
+        if (this.githubIntegration) {
+          const changedFiles = await this.githubIntegration.getChangedFiles();
+          
+          if (changedFiles.length > 0) {
+            core.info(`📝 Scan mode: auto - analyzing ${changedFiles.length} changed files from PR/push`);
+            filesToAnalyze = changedFiles.map(file => file.filename);
+          }
+        }
+        
+        // If no changed files, analyze all files matching patterns
+        if (filesToAnalyze.length === 0) {
+          core.info('📁 Scan mode: auto - no changed files detected, analyzing all matching files');
+          filesToAnalyze = await this.getAllMatchingFiles();
+        }
       }
       
       // Apply filters
@@ -474,6 +496,19 @@ class BaselineAction {
     
     if (shouldFail) {
       const message = `Baseline compliance check failed with ${this.violations.length} violation${this.violations.length !== 1 ? 's' : ''}`;
+      
+      // Set deterministic exit codes for CI integration
+      const hasHighSeverity = this.violations.some(v => v.severity === 'high');
+      const hasNewlyViolations = this.violations.some(v => v.currentStatus === 'newly');
+      
+      if (hasHighSeverity) {
+        process.exitCode = 2; // High severity violations
+      } else if (hasNewlyViolations && enforcementMode === 'error') {
+        process.exitCode = 1; // Newly features treated as errors
+      } else {
+        process.exitCode = 1; // General violations
+      }
+      
       core.setFailed(message);
     } else if (hasViolations && enforcementMode === 'warn') {
       core.warning(`Found ${this.violations.length} Baseline compliance violations (warnings only)`);
