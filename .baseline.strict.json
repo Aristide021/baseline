@@ -1,0 +1,9 @@
+{
+  "rules": {
+    "css": { "baseline-threshold": "widely", "strict-mode": true },
+    "javascript": { "baseline-threshold": "widely", "strict-mode": true },
+    "html": { "baseline-threshold": "widely" }
+  },
+  "enforcement": { "max-violations": 0, "mode": "per-feature" },
+  "reporting": { "include-remediation": true, "group-by-feature": true }
+}

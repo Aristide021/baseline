@@ -71,6 +71,11 @@ inputs:
     required: false
     default: ''
 
+  scenario-label:
+    description: 'Optional label to distinguish multiple Baseline runs (e.g., strict-demo, passing-demo)'
+    required: false
+    default: ''
+
 outputs:
   violations-count:
     description: 'Number of compliance violations found'
@@ -86,6 +91,8 @@ outputs:
   
   sarif-path:
     description: 'Path to the generated SARIF file (if sarif-output was specified)'
+  scenario-label:
+    description: 'Echoes the provided scenario label for multi-job demo coordination'
 
 runs:
   using: 'node20'

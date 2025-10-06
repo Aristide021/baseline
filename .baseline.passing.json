@@ -1,0 +1,9 @@
+{
+  "rules": {
+    "css": { "baseline-threshold": "newly", "allowed-exceptions": [ { "feature": "backdrop-filter", "reason": "Demonstration allowance in passing scenario" } ] },
+    "javascript": { "baseline-threshold": "newly" },
+    "html": { "baseline-threshold": "newly" }
+  },
+  "enforcement": { "max-violations": 0, "mode": "per-feature" },
+  "reporting": { "include-remediation": true, "group-by-feature": true }
+}

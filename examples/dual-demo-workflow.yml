@@ -1,0 +1,48 @@
+# Dual Demo Workflow showcasing strict (violations expected) and passing (clean) scenarios
+name: Baseline Dual Demo
+
+on:
+  push:
+    branches: [ demo ]
+  workflow_dispatch: {}
+
+jobs:
+  strict-enforcement-demo:
+    name: 🚨 Strict Enforcement Demo (Violations Expected)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Strict Baseline Check
+        uses: ./. # local action reference for repo demo
+        with:
+          scenario-label: strict-demo
+          config-path: .baseline.strict.json
+          enforcement-mode: error
+          baseline-threshold: widely
+          comment-on-pr: false
+      - name: Upload Strict Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: baseline-strict-report
+          path: baseline-report.*
+
+  passing-compliance-demo:
+    name: ✅ Passing Compliance Demo (Clean Success)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Passing Baseline Check
+        uses: ./. 
+        with:
+          scenario-label: passing-demo
+          config-path: .baseline.passing.json
+          enforcement-mode: error
+          baseline-threshold: newly
+          comment-on-pr: false
+      - name: Upload Passing Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: baseline-passing-report
+          path: baseline-report.*

@@ -411,7 +411,8 @@ class BaselineAction {
       autoConfigured: this.config.baselineQueries?.hasBaselineQueries || false,
       enforcementMode: this.config.enforcement?.mode || 'per-feature',
       mappingCount: this.baselineDataManager?.mappingCount || 0,
-      baselineDataSource: this.baselineDataManager?.dataSource || 'unknown'
+      baselineDataSource: this.baselineDataManager?.dataSource || 'unknown',
+      scenarioLabel: core.getInput('scenario-label') || ''
     };
 
     // Compute mapping coverage (detected features that have mapping info)
@@ -533,6 +534,9 @@ class BaselineAction {
     core.setOutput('files-with-violations', filesWithViolations.toString());
     core.setOutput('mapping-detected-count', (metadata.mappedDetected || 0).toString());
     core.setOutput('mapping-coverage-percent', (metadata.mappingCoveragePercent || 0).toFixed(2));
+    if (metadata.scenarioLabel) {
+      core.setOutput('scenario-label', metadata.scenarioLabel);
+    }
     
     core.info(`📋 Report saved to ${reportPath}`);
 
@@ -565,6 +569,8 @@ class BaselineAction {
         mappedDetected: this.lastReportMetadata?.mappedDetected,
         mappingCount: this.baselineDataManager?.mappingCount || this.lastReportMetadata?.mappingCount || 0
       };
+      const scenarioLabel = core.getInput('scenario-label');
+      if (scenarioLabel) metadata.scenarioLabel = scenarioLabel;
       
       await this.githubIntegration.processResults(
         this.violations, 
