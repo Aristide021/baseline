@@ -40,6 +40,7 @@ jobs:
           INPUT_BASELINE_THRESHOLD: 'widely'  # Stricter than browserslist config
           INPUT_MAX_VIOLATIONS: '0'
           INPUT_ENFORCEMENT_MODE: 'error'
+          INPUT_INCLUDE_PATTERNS: 'src/risky-features.css,index.html,enforcement-demo.html'  # Scan violation-prone files
         continue-on-error: true
           
       - name: 📊 Upload SARIF (Violations Found)
@@ -129,7 +130,7 @@ jobs:
           echo "- 🤖 **Intelligent Augmentation**: Synthetic features + fallback data sources" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📈 Results:" >> $GITHUB_STEP_SUMMARY
-          echo "- **Strict Enforcement**: ${{ needs.strict-enforcement.result }} (Expected violations found)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Passing Compliance**: ${{ needs.passing-compliance.result }} (Clean success)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Strict Enforcement**: ${{ needs.strict-enforcement.result }} (Scans risky features, expects violations)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Passing Compliance**: ${{ needs.passing-compliance.result }} (Scans safe files, expects success)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "🏆 **Judge Evaluation**: This demonstrates both failure handling and success scenarios for complete CI/CD integration assessment." >> $GITHUB_STEP_SUMMARY

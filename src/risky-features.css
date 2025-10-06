@@ -41,9 +41,34 @@
   border: 2px solid red;
 }
 
-/* ⚠️ FEATURES THAT MIGHT BE LIMITED */
+/* ⚠️ FEATURES THAT SHOULD TRIGGER VIOLATIONS */
 .backdrop-filter-advanced {
   backdrop-filter: blur(10px) contrast(150%) brightness(120%);
+}
+
+/* 🚨 DEFINITELY LIMITED FEATURES - Will trigger violations */
+.view-transitions-api {
+  view-transition-name: slide-it;
+}
+
+@starting-style {
+  .css-starting-style {
+    opacity: 0;
+  }
+}
+
+.css-anchor-positioning {
+  anchor-name: --my-anchor;
+  position: absolute;
+  top: anchor(--my-anchor bottom);
+}
+
+/* CSS Nesting (might be limited depending on Baseline data) */
+.forced-nesting {
+  color: blue;
+  .nested {
+    color: red;
+  }
 }
 
 .scroll-driven-animations {
