@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/baseline-logo.svg" alt="Baseline GitHub Action" width="400">
+  <img src="assets/baseline-logo.jpg" alt="Baseline GitHub Action" width="400">
 </div>
 
 # Baseline GitHub Action
