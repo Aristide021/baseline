@@ -359,9 +359,9 @@ Found ${fileViolations.length} violation${fileViolations.length !== 1 ? 's' : ''
       : 'None';
     const enforcementMode = metadata.enforcementMode || 'per-feature';
     const dataSource = metadata.baselineDataSource || 'unknown';
-  const mappingCount = metadata.mappingCount || '—';
-  const mappedDetected = metadata.mappedDetected != null ? metadata.mappedDetected : '—';
-  const mappingCoverage = metadata.mappingCoveragePercent != null ? `${metadata.mappingCoveragePercent.toFixed(2)}%` : '—';
+    const mappingCount = metadata.mappingCount || '—';
+    const mappedDetected = metadata.mappedDetected != null ? metadata.mappedDetected : '—';
+    const mappingCoverage = metadata.mappingCoveragePercent != null ? `${metadata.mappingCoveragePercent.toFixed(2)}%` : '—';
     const autoConfigured = metadata.autoConfigured ? 'Yes' : 'No';
 
     return `### ℹ️ Report Information

@@ -20,7 +20,9 @@ describe('Regression: File Count vs Features Detected', () => {
 
   afterAll(async () => {
     process.chdir('..');
-    try { await fs.rm(tempDir, { recursive: true, force: true }); } catch (_) {}
+    try { await fs.rm(tempDir, { recursive: true, force: true }); } catch (_) {
+      // Ignore cleanup errors
+    }
   });
 
   it('should report non-zero total-files-scanned when features are detected', async () => {

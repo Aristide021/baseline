@@ -437,8 +437,8 @@ Check the PR comment or full report for detailed information about violations an
   generateWorkflowSummary(violations, summary, metadata) {
     const hasViolations = violations.length > 0;
     
-  const scenarioPrefix = metadata.scenarioLabel ? ` (${metadata.scenarioLabel})` : '';
-  let content = `# ${hasViolations ? '❌' : '✅'} Baseline Compliance Report${scenarioPrefix}\n\n`;
+    const scenarioPrefix = metadata.scenarioLabel ? ` (${metadata.scenarioLabel})` : '';
+    let content = `# ${hasViolations ? '❌' : '✅'} Baseline Compliance Report${scenarioPrefix}\n\n`;
     
     // Add scan statistics line
     const totalFiles = metadata.totalFilesScanned || metadata.totalFiles || 0;

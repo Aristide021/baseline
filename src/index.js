@@ -45,7 +45,7 @@ class BaselineAction {
       // Get files to analyze
       const filesToAnalyze = await this.getFilesToAnalyze();
       this.totalFilesScanned = filesToAnalyze.length;
-  this.filesAnalyzed = filesToAnalyze;
+      this.filesAnalyzed = filesToAnalyze;
       core.info(`📁 Found ${filesToAnalyze.length} files to analyze`);
       
       if (filesToAnalyze.length === 0) {
@@ -455,15 +455,15 @@ class BaselineAction {
             fid.toLowerCase()
           ].filter(Boolean);
           let matched = false;
-            for (const variant of variations) {
-              info = this.baselineDataManager.getFeatureInfo(variant);
-              if (info) {
-                core.debug(`Feature ${fid}: mapped (via ${variant})`);
-                mappedDetected++;
-                matched = true;
-                break;
-              }
+          for (const variant of variations) {
+            info = this.baselineDataManager.getFeatureInfo(variant);
+            if (info) {
+              core.debug(`Feature ${fid}: mapped (via ${variant})`);
+              mappedDetected++;
+              matched = true;
+              break;
             }
+          }
           if (!matched) {
             core.debug(`Feature ${fid}: not mapped`);
           }
@@ -639,9 +639,9 @@ class BaselineAction {
     core.setOutput('has-violations', 'false');
     core.setOutput('total-files-scanned', '0');
     core.setOutput('total-features-detected', '0');
-  core.setOutput('files-with-violations', '0');
-  core.setOutput('mapping-detected-count', '0');
-  core.setOutput('mapping-coverage-percent', '0');
+    core.setOutput('files-with-violations', '0');
+    core.setOutput('mapping-detected-count', '0');
+    core.setOutput('mapping-coverage-percent', '0');
     core.setOutput('baseline-queries-detected', (this.config?.baselineQueries?.hasBaselineQueries ? 'true' : 'false'));
     if (this.config?.baselineQueries?.queries) {
       core.setOutput('baseline-query-list', this.config.baselineQueries.queries.join(', '));

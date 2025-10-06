@@ -288,25 +288,6 @@ function mapSeverityToLevel(severity) {
 }
 
 /**
- * Create a human-readable message for the violation
- * @param {Object} violation - Policy violation
- * @returns {string} Message text
- */
-function createMessage(violation) {
-  const feature = violation.featureName || violation.feature;
-  const baseline = violation.baseline || 'unknown baseline status';
-  const guidance = violation.guidance || '';
-  
-  let message = `${feature} is ${baseline}`;
-  
-  if (guidance) {
-    message += `: ${guidance}`;
-  }
-  
-  return message;
-}
-
-/**
  * Create help markdown for a rule
  * @param {Object} violation - Policy violation  
  * @param {Array} helpUris - Array of help URIs
@@ -331,11 +312,11 @@ function createHelpMarkdown(violation, helpUris) {
   }
   
   if (helpUris.length > 0) {
-    markdown += `**Resources**:\n`;
+    markdown += '**Resources**:\n';
     helpUris.forEach(uri => {
       const linkText = uri.includes('mdn') ? 'MDN Documentation' : 
-                     uri.includes('spec') ? 'Specification' : 
-                     uri.includes('web.dev') ? 'Baseline Guide' : 'Learn More';
+        uri.includes('spec') ? 'Specification' : 
+          uri.includes('web.dev') ? 'Baseline Guide' : 'Learn More';
       markdown += `- [${linkText}](${uri})\n`;
     });
   }
@@ -433,15 +414,6 @@ function normalizePath(filePath) {
   return filePath.replace(/\\/g, '/');
 }
 
-/**
- * Capitalize first letter of string
- * @param {string} str - String to capitalize
- * @returns {string} Capitalized string
- */
-function capitalize(str) {
-  if (!str) return str;
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
 
 module.exports = {
   generateSarif,
