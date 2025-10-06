@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 Baseline Enforcement Demo - Violations Expected!</title>
+    <link rel="stylesheet" href="src/risky-features.css">
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            padding: 2rem;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+        
+        .warning-banner {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .violation-example {
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 4px solid #ff4757;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        
+        /* 🚨 RISKY: CSS Nesting (newly available, will trigger with strict enforcement) */
+        .demo-card {
+            background: white;
+            color: black;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            
+            .nested-content {
+                padding: 0.5rem;
+                background: #f8f9fa;
+                
+                &:hover {
+                    background: #e9ecef;
+                }
+            }
+        }
+        
+        /* 🚨 RISKY: Container Queries (newly available) */
+        .container-example {
+            container-type: inline-size;
+            container-name: demo;
+        }
+        
+        @container demo (min-width: 300px) {
+            .responsive-content {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        /* 🚨 RISKY: Advanced :has() selector */
+        .card:has(.priority) {
+            border-color: red;
+            background: rgba(255, 0, 0, 0.1);
+        }
+        
+        /* 🚨 RISKY: View Transitions */
+        .page-transition {
+            view-transition-name: main-content;
+        }
+        
+        /* 🚨 VERY RISKY: CSS Anchor Positioning (experimental) */
+        .anchor-demo {
+            anchor-name: --popup-anchor;
+        }
+        
+        .popup {
+            position: absolute;
+            top: anchor(--popup-anchor bottom);
+            left: anchor(--popup-anchor center);
+        }
+    </style>
+</head>
+<body>
+    <div class="warning-banner">
+        <h1>🚨 Baseline Enforcement Demo</h1>
+        <p><strong>This page contains cutting-edge web features that will trigger Baseline violations!</strong></p>
+        <p>Used to demonstrate the GitHub Action's enforcement capabilities.</p>
+    </div>
+
+    <div class="violation-example">
+        <h3>🎯 Expected Violations with "baseline widely available":</h3>
+        <ul>
+            <li>CSS Nesting syntax (<code>.nested { &:hover {} }</code>)</li>
+            <li>Container Queries (<code>@container</code>)</li>
+            <li>Advanced <code>:has()</code> selectors</li>
+            <li>View Transitions API</li>
+            <li>CSS Anchor Positioning</li>
+            <li>Web Locks API</li>
+            <li>Origin Private File System</li>
+            <li>Advanced backdrop-filter combinations</li>
+        </ul>
+    </div>
+
+    <div class="demo-card container-example">
+        <div class="nested-content responsive-content">
+            <div>
+                <h3>Demonstration Content</h3>
+                <p>This content uses multiple cutting-edge features that should trigger violations.</p>
+            </div>
+            <div class="priority">
+                <p>Priority content that triggers :has() selector</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="anchor-demo" id="anchor-point">
+        <h3>Anchor Point</h3>
+        <div class="popup">Positioned with CSS Anchor API</div>
+    </div>
+
+    <div class="page-transition">
+        <h2>🔍 What the GitHub Action Will Find:</h2>
+        <p>When this demo runs through the Baseline check, it will:</p>
+        <ol>
+            <li>🚨 <strong>Detect violations</strong> in newly available features</li>
+            <li>📊 <strong>Generate SARIF report</strong> with specific violations</li>
+            <li>❌ <strong>Fail the build</strong> (demonstrating enforcement)</li>
+            <li>📝 <strong>Provide remediation guidance</strong> for each violation</li>
+            <li>🔗 <strong>Link to polyfills/alternatives</strong> where available</li>
+        </ol>
+    </div>
+
+    <script src="src/risky-features.js"></script>
+    
+    <script>
+        // 🚨 RISKY: More cutting-edge JavaScript inline
+        
+        // Start View Transition if supported (experimental)
+        function triggerTransition() {
+            if ('startViewTransition' in document) {
+                document.startViewTransition(() => {
+                    document.body.style.background = 'linear-gradient(45deg, #2ecc71, #27ae60)';
+                });
+            }
+        }
+        
+        // 🚨 RISKY: Using SharedArrayBuffer (limited support)
+        if (typeof SharedArrayBuffer !== 'undefined') {
+            console.log('SharedArrayBuffer is available (limited support)');
+        }
+        
+        // 🚨 RISKY: Web Locks API
+        async function demonstrateLocks() {
+            if ('locks' in navigator) {
+                await navigator.locks.request('demo-lock', () => {
+                    console.log('Acquired lock for demo');
+                });
+            }
+        }
+        
+        // Trigger the risky functions
+        setTimeout(triggerTransition, 1000);
+        demonstrateLocks();
+        
+        console.log('🚨 Enforcement demo loaded with violations expected!');
+    </script>
+</body>
+</html>

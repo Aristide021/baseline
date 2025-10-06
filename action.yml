@@ -21,6 +21,11 @@ inputs:
     required: false
     default: 'node_modules/**,dist/**,build/**'
   
+  scan-mode:
+    description: 'Scan scope mode (auto|diff|repo) - auto detects changed files in PR, diff only changed files, repo scans all files'
+    required: false
+    default: 'auto'
+  
   enforcement-mode:
     description: 'Enforcement level (warn|error|block)'
     required: false
@@ -66,6 +71,11 @@ inputs:
     required: false
     default: ''
 
+  scenario-label:
+    description: 'Optional label to distinguish multiple Baseline runs (e.g., strict-demo, passing-demo)'
+    required: false
+    default: ''
+
 outputs:
   violations-count:
     description: 'Number of compliance violations found'
@@ -81,6 +91,8 @@ outputs:
   
   sarif-path:
     description: 'Path to the generated SARIF file (if sarif-output was specified)'
+  scenario-label:
+    description: 'Echoes the provided scenario label for multi-job demo coordination'
 
 runs:
   using: 'node20'

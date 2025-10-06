@@ -250,7 +250,19 @@ Check the PR comment or full report for detailed information about violations an
     try {
       // Limit annotations to prevent overwhelming the UI
       const maxAnnotations = 50;
-      const annotationsToAdd = violations.slice(0, maxAnnotations);
+      
+      // Deduplicate violations by feature and file to prevent duplicate warnings
+      const seenViolations = new Set();
+      const uniqueViolations = violations.filter(violation => {
+        const key = `${violation.feature.featureId}-${violation.feature.file}-${violation.feature.location.line || 1}`;
+        if (seenViolations.has(key)) {
+          return false;
+        }
+        seenViolations.add(key);
+        return true;
+      });
+      
+      const annotationsToAdd = uniqueViolations.slice(0, maxAnnotations);
 
       for (const violation of annotationsToAdd) {
         const feature = violation.feature;
@@ -289,8 +301,12 @@ Check the PR comment or full report for detailed information about violations an
         }
       }
 
-      if (violations.length > maxAnnotations) {
-        core.warning(`Added ${maxAnnotations} annotations out of ${violations.length} violations. See full report for complete details.`);
+      if (uniqueViolations.length > maxAnnotations) {
+        core.warning(`Added ${maxAnnotations} annotations out of ${uniqueViolations.length} unique violations. See full report for complete details.`);
+      }
+      
+      if (violations.length > uniqueViolations.length) {
+        core.debug(`Deduplicated ${violations.length - uniqueViolations.length} duplicate violation(s) for cleaner output`);
       }
 
       core.debug(`Added ${annotationsToAdd.length} workflow annotations`);
@@ -421,7 +437,20 @@ Check the PR comment or full report for detailed information about violations an
   generateWorkflowSummary(violations, summary, metadata) {
     const hasViolations = violations.length > 0;
     
-    let content = `# ${hasViolations ? '❌' : '✅'} Baseline Compliance Report\n\n`;
+  const scenarioPrefix = metadata.scenarioLabel ? ` (${metadata.scenarioLabel})` : '';
+  let content = `# ${hasViolations ? '❌' : '✅'} Baseline Compliance Report${scenarioPrefix}\n\n`;
+    
+    // Add scan statistics line
+    const totalFiles = metadata.totalFilesScanned || metadata.totalFiles || 0;
+    const totalFeatures = metadata.totalFeatures || 0;
+    const mappingCoverage = metadata.mappingCoveragePercent != null ? `${metadata.mappingCoveragePercent.toFixed(2)}%` : '—';
+    const mappedDetected = metadata.mappedDetected != null ? metadata.mappedDetected : '—';
+    const baselineQueries = Array.isArray(metadata.baselineQueries) && metadata.baselineQueries.length > 0 
+      ? metadata.baselineQueries.join(', ') 
+      : 'baseline newly available';
+    const enforcementMode = metadata.enforcementMode || 'per-feature';
+    
+    content += `> 📊 **Scan Summary**: Detected ${totalFeatures} features across ${totalFiles} files • Queries: ${baselineQueries} • Mode: ${enforcementMode} • Mapping: ${mappedDetected} (${mappingCoverage})\n\n`;
     
     if (!hasViolations) {
       content += '## ✅ All Clear!\n\n';

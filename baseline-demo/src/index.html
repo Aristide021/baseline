@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baseline Demo - Official Queries Support</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Widely available HTML features -->
+    <main class="container">
+        <header>
+            <h1>🆕 Official Baseline Queries Demo</h1>
+            <p>First GitHub Action to support <code>baseline 2022</code> and <code>baseline widely available</code>!</p>
+        </header>
+        
+        <!-- Container queries demo -->
+        <section class="modern-layout">
+            <div class="card">
+                <h2>Auto-Configuration</h2>
+                <p>This demo uses <strong>official Baseline queries</strong> in .browserslistrc:</p>
+                <ul>
+                    <li><code>baseline 2022</code> - Auto-configures yearly enforcement</li>
+                    <li><code>baseline widely available</code> - Strict per-feature enforcement</li>
+                </ul>
+            </div>
+        </section>
+        
+        <!-- Features with varying baseline status -->
+        <section class="card">
+            <h2>Feature Detection Examples</h2>
+            
+            <!-- Widely available features -->
+            <details open>
+                <summary>✅ Widely Available Features</summary>
+                <ul>
+                    <li>CSS Grid Layout</li>
+                    <li>CSS Custom Properties</li>
+                    <li>Intersection Observer API</li>
+                    <li>Promise.allSettled()</li>
+                </ul>
+            </details>
+            
+            <!-- Newly available features -->
+            <details>
+                <summary>🆕 Newly Available Features</summary>
+                <ul>
+                    <li>Container Queries</li>
+                    <li>CSS :has() selector</li>
+                    <li>Private class fields</li>
+                    <li>Top-level await</li>
+                </ul>
+            </details>
+            
+            <!-- Limited/cutting-edge features -->
+            <details>
+                <summary>⚠️ Limited Availability</summary>
+                <ul>
+                    <li>View Transitions API</li>
+                    <li>CSS Anchor Positioning</li>
+                    <li>Web Locks API</li>
+                    <li>Import Assertions</li>
+                </ul>
+            </details>
+        </section>
+        
+        <!-- Interactive demo -->
+        <section class="card accent-color-demo">
+            <h2>Interactive Demo</h2>
+            <form>
+                <label for="demo-input">Try the accent-color (2022 feature):</label>
+                <input type="range" id="demo-input" min="0" max="100" value="50">
+                
+                <label for="demo-checkbox">Custom checkbox styling:</label>
+                <input type="checkbox" id="demo-checkbox" checked>
+                
+                <button type="button" class="button">Focus me to see :focus-visible</button>
+            </form>
+        </section>
+        
+        <!-- Aspect ratio demo -->
+        <section class="card aspect-ratio-demo">
+            <h2>CSS aspect-ratio Demo</h2>
+            <p>This card maintains a 16:9 aspect ratio using the <code>aspect-ratio</code> property (Baseline 2022).</p>
+            <div style="background: linear-gradient(45deg, #ff6b6b, #4ecdc4); border-radius: 8px; padding: 1rem;">
+                Responsive content that maintains proportions
+            </div>
+        </section>
+    </main>
+    
+    <!-- Load modern JavaScript -->
+    <script src="script.js"></script>
+    
+    <!-- Performance observer for cutting-edge APIs -->
+    <script>
+        // PerformanceObserver - check baseline status
+        if ('PerformanceObserver' in window) {
+            const observer = new PerformanceObserver((list) => {
+                console.log('Performance entries:', list.getEntries());
+            });
+            observer.observe({ entryTypes: ['navigation', 'resource'] });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+/* 
+ * RISKY FEATURES DEMO - These will trigger Baseline violations!
+ * Used to demonstrate enforcement capabilities
+ */
+
+/* 🚨 CUTTING-EDGE CSS - Will trigger violations */
+.view-transitions {
+  view-transition-name: slide-it;
+  view-transition-class: fade;
+}
+
+.anchor-positioning {
+  anchor-name: --my-anchor;
+  position: absolute;
+  top: anchor(--my-anchor bottom);
+  left: anchor(--my-anchor center);
+}
+
+.css-nesting {
+  color: blue;
+  .nested-selector {
+    color: red;
+    &:hover {
+      color: green;
+    }
+  }
+}
+
+/* 🆕 NEWLY AVAILABLE - Should trigger warnings with strict enforcement */
+.container-queries {
+  container-type: inline-size;
+}
+
+@container (min-width: 400px) {
+  .responsive-component {
+    display: flex;
+  }
+}
+
+.has-selector:has(> .child) {
+  border: 2px solid red;
+}
+
+/* ⚠️ FEATURES THAT SHOULD TRIGGER VIOLATIONS */
+.backdrop-filter-advanced {
+  backdrop-filter: blur(10px) contrast(150%) brightness(120%);
+}
+
+/* 🚨 DEFINITELY LIMITED FEATURES - Will trigger violations */
+.view-transitions-api {
+  view-transition-name: slide-it;
+}
+
+@starting-style {
+  .css-starting-style {
+    opacity: 0;
+  }
+}
+
+.css-anchor-positioning {
+  anchor-name: --my-anchor;
+  position: absolute;
+  top: anchor(--my-anchor bottom);
+}
+
+/* CSS Nesting (might be limited depending on Baseline data) */
+.forced-nesting {
+  color: blue;
+  .nested {
+    color: red;
+  }
+}
+
+.scroll-driven-animations {
+  animation: slide linear;
+  animation-timeline: scroll(root);
+}
+
+.cascade-layers {
+  @layer base, components, utilities;
+}
+
+@layer base {
+  .layer-styling {
+    color: blue;
+  }
+}
+
+/* 🧪 EXPERIMENTAL FEATURES */
+.css-anchor-positioning-experimental {
+  position-anchor: --header;
+  inset-area: top;
+}
+
+.view-transitions-advanced {
+  view-transition-group: navigation;
+  view-transition-class: slide-left;
+}

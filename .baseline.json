@@ -1,0 +1,26 @@
+{
+  "rules": {
+    "css": {
+      "baseline-threshold": "newly",
+      "allowed-exceptions": [
+        { "feature": "backdrop-filter", "reason": "Allow backdrop-filter for clean demo", "files": ["index.html*", "enforcement-demo.html*", "src/risky-features.css"] }
+      ]
+    },
+    "javascript": { "baseline-threshold": "newly" },
+    "html": { "baseline-threshold": "newly" }
+  },
+  "enforcement": {
+    "max-violations": 0,
+    "mode": "per-feature",
+    "ignore-patterns": [
+      "src/risky-features.css",
+      "enforcement-demo.html"
+    ],
+    "include-patterns": [
+      "**/*.{js,jsx,ts,tsx,css,scss,html,htm}",
+      "!src/risky-features.css",
+      "!enforcement-demo.html"
+    ]
+  },
+  "reporting": { "include-remediation": true, "group-by-feature": true }
+}

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🆕 Baseline GitHub Action Demo</title>
+    <link rel="stylesheet" href="src/styles.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .hero {
+            text-align: center;
+            color: white;
+            margin-bottom: 3rem;
+        }
+        
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .badge {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            display: inline-block;
+            margin: 0.5rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+        
+        .card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .status-indicator {
+            font-size: 1.2rem;
+            margin-right: 0.5rem;
+        }
+        
+        .widely { color: #27ae60; }
+        .newly { color: #f39c12; }
+        .limited { color: #e74c3c; }
+        
+        code {
+            background: #f8f9fa;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>🎯 Baseline GitHub Action Demo</h1>
+        <p>First GitHub Action to support <strong>official Baseline queries</strong>!</p>
+        <div class="badge">baseline 2022</div>
+        <div class="badge">baseline widely available</div>
+    </div>
+
+    <div class="layout-grid feature-grid">
+        <div class="card">
+            <h3><span class="status-indicator widely">✅</span>Widely Available Features</h3>
+            <p>These features have been interoperable for <strong>30+ months</strong>:</p>
+            <ul>
+                <li><code>display: grid</code> - CSS Grid Layout</li>
+                <li><code>--custom-properties</code> - CSS Variables</li>
+                <li><code>IntersectionObserver</code> - Viewport detection</li>
+                <li><code>fetch()</code> - Modern HTTP requests</li>
+                <li><code>Promise.allSettled()</code> - Promise utilities</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3><span class="status-indicator newly">🆕</span>Newly Available Features</h3>
+            <p>These features became interoperable <strong>≤30 months ago</strong>:</p>
+            <ul>
+                <li><code>@container</code> - Container Queries</li>
+                <li><code>:has()</code> - CSS parent selector</li>
+                <li><code>#privateFields</code> - JavaScript private fields</li>
+                <li><code>static {}</code> - Static initialization blocks</li>
+                <li><code>top-level await</code> - Module-level await</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3><span class="status-indicator newly">⚠️</span>Age-Based Features (2022)</h3>
+            <p>Features from <strong>baseline 2022</strong> enforcement:</p>
+            <ul>
+                <li><code>accent-color</code> - Form control theming</li>
+                <li><code>aspect-ratio</code> - Intrinsic sizing</li>
+                <li><code>Array.at()</code> - Negative indexing</li>
+                <li><code>Object.hasOwn()</code> - Property checking</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3><span class="status-indicator limited">🚧</span>Limited/Cutting-Edge</h3>
+            <p>These features have <strong>limited support</strong>:</p>
+            <ul>
+                <li><code>view-transition-name</code> - View Transitions API</li>
+                <li><code>anchor-name</code> - CSS Anchor Positioning</li>
+                <li><code>navigator.locks</code> - Web Locks API</li>
+                <li><code>import assertions</code> - JSON imports</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 2rem; text-align: center;">
+        <h3>🤖 Auto-Configuration in Action</h3>
+        <p>The GitHub Action automatically detected our <code>.browserslistrc</code> and configured:</p>
+        <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+            <strong>Enforcement Mode:</strong> yearly (from "baseline 2022")<br>
+            <strong>Baseline Threshold:</strong> widely (from "baseline widely available")<br>
+            <strong>Age-Based Rules:</strong> 2022+ features enforced by age
+        </div>
+        <p><em>Zero manual configuration required!</em></p>
+    </div>
+
+    <template id="demo-template">
+        <div class="template-content">
+            <p>This template element demonstrates HTML5 features!</p>
+        </div>
+    </template>
+
+    <script src="src/script.js"></script>
+    <script>
+        // Demonstrate template usage (HTML5 feature)
+        const template = document.getElementById('demo-template');
+        if (template && template.content) {
+            console.log('Template element supported');
+        }
+        
+        // Modern intersection observer usage
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.classList.add('visible');
+                }, index * 200);
+            });
+        });
+    </script>
+</body>
+</html>

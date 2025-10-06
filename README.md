@@ -2,6 +2,8 @@
 
 Automatically enforce web platform feature compatibility standards in your CI/CD pipeline. Unlike existing linting tools that provide suggestions, Baseline acts as a compliance gatekeeper, preventing non-compliant code from reaching production environments.
 
+> 🚀 **Demo Update**: Enhanced with mapping coverage intelligence and comprehensive scan metrics!
+
 ## Features
 
 - 🆕 **Official Baseline Queries**: First GitHub Action to support the new web.dev Baseline syntax (`baseline 2022`, `baseline widely available`)
@@ -200,6 +202,7 @@ Generate SARIF output for integration with GitHub Advanced Security code scannin
 | `baseline-threshold` | Minimum Baseline status required (`limited`\|`newly`\|`widely`) | `newly` |
 | `include-patterns` | File patterns to analyze | `**/*.{js,jsx,ts,tsx,css,scss,html}` |
 | `exclude-patterns` | File patterns to ignore | `node_modules/**,dist/**,build/**` |
+| `scan-mode` | Scan scope: `auto` (changed files, fallback all) \| `diff` (only changed) \| `repo` (entire repository) | `auto` |
 | `enforcement-mode` | Enforcement level (`warn`\|`error`\|`block`) | `error` |
 | `max-violations` | Maximum violations before failing | `0` |
 | `comment-on-pr` | Post detailed PR comments | `true` |
@@ -279,6 +282,43 @@ Create a `.baseline.json` file in your repository root:
 | `violations-count` | Number of compliance violations found |
 | `compliance-score` | Percentage of features meeting baseline requirements |
 | `report-path` | Path to the generated report file |
+
+### Adaptive Yearly Enforcement (Automatic)
+
+When a Browserslist Baseline year query (e.g. `baseline 2022`) is detected, the action synthesizes year-based rules:
+
+| Age (years) | Generated Level | Rationale |
+|-------------|-----------------|-----------|
+| >= 3 | error | Feature considered mature — deviations are high risk |
+| >= 2 | warn  | Transition period — surface but don’t block |
+| >= 1 | info  | Emerging stability — informational only |
+| < 1 | off   | Too new for enforcement |
+
+Pseudo-algorithm:
+```
+for each detectedYear:
+  age = currentYear - detectedYear
+  if age >= 3: rule[year] = 'error'
+  else if age >= 2: rule[year] = 'warn'
+  else if age >= 1: rule[year] = 'info'
+  else: rule[year] = 'off'
+augment older missing years as 'error'
+extend forward years as 'off' / 'info'
+```
+
+These rules combine with per-feature Baseline status checks to form a hybrid adaptive policy without manual configuration.
+
+### Deterministic Exit Codes
+
+Baseline sets predictable exit codes for CI scripting:
+
+| Code | Meaning | Condition |
+|------|---------|-----------|
+| 0 | Success | No violations exceeding thresholds |
+| 1 | Violations | At least one violation (no high severity) and enforcement triggered |
+| 2 | High severity violations | One or more high severity violations present |
+
+> Note: High severity is determined by policy engine classification (e.g., older year / stricter threshold breaches). Code `2` is preserved by avoiding `core.setFailed` so downstream composite actions can branch on it.
 
 ## Example Reports
 
@@ -364,4 +404,5 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - 📖 [Documentation](https://docs.baseline.dev)
 - 🐛 [Report Issues](https://github.com/baseline/action/issues)
 - 💬 [Discussions](https://github.com/baseline/action/discussions)
-- 📧 [Email Support](mailto:support@baseline.dev)
+- 📧 [Email Support](mailto:support@baseline.dev)# Trigger dual demo workflow
+# Trigger comprehensive dual scenario test

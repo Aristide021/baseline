@@ -1,0 +1,60 @@
+/* 
+ * BASELINE-SAFE CSS - Should pass all compliance checks
+ * These features are widely available and stable
+ */
+
+/* ✅ WIDELY AVAILABLE FEATURES - No violations expected */
+.flexbox-layout {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.grid-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-gap: 20px;
+}
+
+.css-variables {
+  --primary-color: #007acc;
+  --secondary-color: #333;
+  color: var(--primary-color);
+  background-color: var(--secondary-color);
+}
+
+.transforms {
+  transform: translateX(10px) rotate(45deg) scale(1.2);
+  transition: transform 0.3s ease;
+}
+
+.media-queries {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .media-queries {
+    width: 50%;
+  }
+}
+
+/* Modern but well-supported selectors */
+.pseudo-elements::before {
+  content: "✅ ";
+  color: green;
+}
+
+.attribute-selectors[data-status="active"] {
+  border: 2px solid green;
+}
+
+/* Well-supported animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animations {
+  animation: fadeIn 1s ease-in-out;
+}
