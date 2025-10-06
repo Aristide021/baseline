@@ -359,7 +359,9 @@ Found ${fileViolations.length} violation${fileViolations.length !== 1 ? 's' : ''
       : 'None';
     const enforcementMode = metadata.enforcementMode || 'per-feature';
     const dataSource = metadata.baselineDataSource || 'unknown';
-    const mappingCount = metadata.mappingCount || '—';
+  const mappingCount = metadata.mappingCount || '—';
+  const mappedDetected = metadata.mappedDetected != null ? metadata.mappedDetected : '—';
+  const mappingCoverage = metadata.mappingCoveragePercent != null ? `${metadata.mappingCoveragePercent.toFixed(2)}%` : '—';
     const autoConfigured = metadata.autoConfigured ? 'Yes' : 'No';
 
     return `### ℹ️ Report Information
@@ -371,6 +373,8 @@ Found ${fileViolations.length} violation${fileViolations.length !== 1 ? 's' : ''
 - **Auto Policy Config**: ${autoConfigured}
 - **Enforcement Mode**: ${enforcementMode}
 - **Mapping Count (loaded)**: ${mappingCount}
+ - **Mapped Detected Features**: ${mappedDetected}
+ - **Mapping Coverage**: ${mappingCoverage}
 - **Baseline Data Source**: ${dataSource}
 
 > 🧠 **Adaptive Policy**: Yearly rules auto-generated from Baseline year queries (older years escalate severity). See documentation section "Adaptive Yearly Enforcement".

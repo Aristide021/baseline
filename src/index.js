@@ -28,6 +28,7 @@ class BaselineAction {
     this.allFeatures = [];
     this.violations = [];
     this.summary = {};
+    this.filesAnalyzed = [];
   }
 
   /**
@@ -44,6 +45,7 @@ class BaselineAction {
       // Get files to analyze
       const filesToAnalyze = await this.getFilesToAnalyze();
       this.totalFilesScanned = filesToAnalyze.length;
+  this.filesAnalyzed = filesToAnalyze;
       core.info(`📁 Found ${filesToAnalyze.length} files to analyze`);
       
       if (filesToAnalyze.length === 0) {
@@ -395,11 +397,6 @@ class BaselineAction {
    * @returns {Promise<void>}
    */
   async generateReports() {
-    if (this.violations.length === 0) {
-      core.info('✅ No violations found, skipping detailed report generation');
-      return;
-    }
-    
     core.info('📄 Generating compliance reports...');
     
     const metadata = {
@@ -416,6 +413,22 @@ class BaselineAction {
       mappingCount: this.baselineDataManager?.mappingCount || 0,
       baselineDataSource: this.baselineDataManager?.dataSource || 'unknown'
     };
+
+    // Compute mapping coverage (detected features that have mapping info)
+    try {
+      if (this.baselineDataManager?.getFeatureInfo && this.allFeatures.length) {
+        const mappedDetected = this.allFeatures.filter(f => f.featureId && this.baselineDataManager.getFeatureInfo(f.featureId)).length;
+        metadata.mappedDetected = mappedDetected;
+        metadata.mappingCoveragePercent = this.allFeatures.length ? (mappedDetected / this.allFeatures.length * 100) : 0;
+      } else {
+        metadata.mappedDetected = 0;
+        metadata.mappingCoveragePercent = 0;
+      }
+    } catch (e) {
+      core.debug(`Failed to compute mapping coverage: ${e.message}`);
+      metadata.mappedDetected = 0;
+      metadata.mappingCoveragePercent = 0;
+    }
     
     // Get output format from input
     const outputFormat = core.getInput('output-format') || 'json';
@@ -452,16 +465,16 @@ class BaselineAction {
       core.info(`📊 SARIF report saved to ${resolvedSarifPath}`);
     }
     
-    // Set outputs for other actions to use
+    // Set outputs for other actions to use (always, even with zero violations)
     core.setOutput('report-path', reportPath);
     core.setOutput('violations-count', this.violations.length.toString());
     core.setOutput('compliance-score', metadata.complianceScore.toString());
     core.setOutput('has-violations', this.violations.length > 0 ? 'true' : 'false');
     // Telemetry outputs
-    core.setOutput('total-files-scanned', (this.totalFilesScanned || 0).toString());
+    const scannedFileCount = (this.totalFilesScanned != null) ? this.totalFilesScanned : (this.filesAnalyzed ? this.filesAnalyzed.length : 0);
+    core.setOutput('total-files-scanned', scannedFileCount.toString());
     core.setOutput('total-features-detected', this.allFeatures.length.toString());
     core.setOutput('baseline-queries-detected', (this.config.baselineQueries?.hasBaselineQueries ? 'true' : 'false'));
-    core.setOutput('exit-code', (process.exitCode || 0).toString());
     if (this.config.baselineQueries?.queries) {
       core.setOutput('baseline-query-list', this.config.baselineQueries.queries.join(', '));
     }
@@ -469,6 +482,11 @@ class BaselineAction {
       core.setOutput('baseline-data-age-ms', (Date.now() - this.baselineDataManager.lastLoadedAt).toString());
       core.setOutput('baseline-data-source', this.baselineDataManager.dataSource || 'unknown');
     }
+    // Files with violations
+    const filesWithViolations = new Set(this.violations.map(v => v.feature.file)).size;
+    core.setOutput('files-with-violations', filesWithViolations.toString());
+    core.setOutput('mapping-detected-count', (metadata.mappedDetected || 0).toString());
+    core.setOutput('mapping-coverage-percent', (metadata.mappingCoveragePercent || 0).toFixed(2));
     
     core.info(`📋 Report saved to ${reportPath}`);
   }
@@ -486,10 +504,13 @@ class BaselineAction {
     if (this.githubIntegration) {
       const metadata = {
         totalFeatures: this.allFeatures.length,
+        totalFilesScanned: this.totalFilesScanned || (this.filesAnalyzed ? this.filesAnalyzed.length : 0),
         complianceScore: this.policyEngine.calculateComplianceScore(this.allFeatures, this.violations),
         baseline: {
           threshold: this.config.rules?.css?.['baseline-threshold'] || 'newly'
-        }
+        },
+        baselineQueries: this.config.baselineQueries?.queries || [],
+        enforcementMode: this.config.enforcement?.mode || 'per-feature'
       };
       
       await this.githubIntegration.processResults(
@@ -537,6 +558,9 @@ class BaselineAction {
     } else {
       core.info('✅ Baseline compliance check passed!');
     }
+
+    // Set exit-code output after final determination
+    core.setOutput('exit-code', (process.exitCode || 0).toString());
   }
 
   /**
@@ -548,14 +572,30 @@ class BaselineAction {
     core.setOutput('violations-count', '0');
     core.setOutput('compliance-score', '100');
     core.setOutput('has-violations', 'false');
+    core.setOutput('total-files-scanned', '0');
+    core.setOutput('total-features-detected', '0');
+  core.setOutput('files-with-violations', '0');
+  core.setOutput('mapping-detected-count', '0');
+  core.setOutput('mapping-coverage-percent', '0');
+    core.setOutput('baseline-queries-detected', (this.config?.baselineQueries?.hasBaselineQueries ? 'true' : 'false'));
+    if (this.config?.baselineQueries?.queries) {
+      core.setOutput('baseline-query-list', this.config.baselineQueries.queries.join(', '));
+    }
+    if (this.baselineDataManager?.lastLoadedAt) {
+      core.setOutput('baseline-data-age-ms', (Date.now() - this.baselineDataManager.lastLoadedAt).toString());
+      core.setOutput('baseline-data-source', this.baselineDataManager.dataSource || 'unknown');
+    }
     
     if (this.githubIntegration) {
       const metadata = {
         totalFeatures: 0,
+        totalFilesScanned: 0,
         complianceScore: 100,
         baseline: {
           threshold: this.config?.rules?.css?.['baseline-threshold'] || 'newly'
-        }
+        },
+        baselineQueries: this.config?.baselineQueries?.queries || [],
+        enforcementMode: this.config?.enforcement?.mode || 'per-feature'
       };
       
       await this.githubIntegration.processResults([], {}, metadata, '');

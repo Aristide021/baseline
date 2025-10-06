@@ -442,12 +442,14 @@ Check the PR comment or full report for detailed information about violations an
     // Add scan statistics line
     const totalFiles = metadata.totalFilesScanned || metadata.totalFiles || 0;
     const totalFeatures = metadata.totalFeatures || 0;
+    const mappingCoverage = metadata.mappingCoveragePercent != null ? `${metadata.mappingCoveragePercent.toFixed(2)}%` : '—';
+    const mappedDetected = metadata.mappedDetected != null ? metadata.mappedDetected : '—';
     const baselineQueries = Array.isArray(metadata.baselineQueries) && metadata.baselineQueries.length > 0 
       ? metadata.baselineQueries.join(', ') 
       : 'baseline newly available';
     const enforcementMode = metadata.enforcementMode || 'per-feature';
     
-    content += `> 📊 **Scan Summary**: Detected ${totalFeatures} features across ${totalFiles} files • Queries: ${baselineQueries} • Mode: ${enforcementMode}\n\n`;
+    content += `> 📊 **Scan Summary**: Detected ${totalFeatures} features across ${totalFiles} files • Queries: ${baselineQueries} • Mode: ${enforcementMode} • Mapping: ${mappedDetected} (${mappingCoverage})\n\n`;
     
     if (!hasViolations) {
       content += '## ✅ All Clear!\n\n';
