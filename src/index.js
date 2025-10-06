@@ -417,15 +417,23 @@ class BaselineAction {
     // Compute mapping coverage (detected features that have mapping info)
     try {
       if (this.baselineDataManager?.getFeatureInfo && this.allFeatures.length) {
-        const mappedDetected = this.allFeatures.filter(f => f.featureId && this.baselineDataManager.getFeatureInfo(f.featureId)).length;
+        core.debug(`Computing mapping coverage for ${this.allFeatures.length} features`);
+        const mappedDetected = this.allFeatures.filter(f => {
+          if (!f.featureId) return false;
+          const info = this.baselineDataManager.getFeatureInfo(f.featureId);
+          core.debug(`Feature ${f.featureId}: ${info ? 'mapped' : 'not mapped'}`);
+          return !!info;
+        }).length;
         metadata.mappedDetected = mappedDetected;
         metadata.mappingCoveragePercent = this.allFeatures.length ? (mappedDetected / this.allFeatures.length * 100) : 0;
+        core.info(`Mapping coverage: ${mappedDetected}/${this.allFeatures.length} (${metadata.mappingCoveragePercent.toFixed(1)}%)`);
       } else {
+        core.debug(`Mapping coverage calculation skipped: manager=${!!this.baselineDataManager}, getFeatureInfo=${!!this.baselineDataManager?.getFeatureInfo}, features=${this.allFeatures.length}`);
         metadata.mappedDetected = 0;
         metadata.mappingCoveragePercent = 0;
       }
     } catch (e) {
-      core.debug(`Failed to compute mapping coverage: ${e.message}`);
+      core.warning(`Failed to compute mapping coverage: ${e.message}`);
       metadata.mappedDetected = 0;
       metadata.mappingCoveragePercent = 0;
     }
