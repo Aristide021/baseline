@@ -40,6 +40,7 @@ jobs:
           INPUT_SCENARIO_LABEL: 'strict-demo'
           INPUT_CONFIG_PATH: '.baseline.strict.json'  # Use strict configuration
           INPUT_INCLUDE_PATTERNS: 'src/risky-features.css,index.html,enforcement-demo.html'  # Scan violation-prone files
+          INPUT_SCAN_MODE: 'repo'  # Force scanning all files, not just changed ones
         continue-on-error: true
           
       - name: 📊 Upload SARIF (Violations Found)
@@ -87,6 +88,7 @@ jobs:
           INPUT_SCENARIO_LABEL: 'passing-demo'
           INPUT_CONFIG_PATH: '.baseline.passing.json'  # Use passing configuration
           INPUT_INCLUDE_PATTERNS: 'src/safe-script.js,src/style.css'  # Only scan safe files
+          INPUT_SCAN_MODE: 'repo'  # Force scanning all files, not just changed ones
           
       - name: 📊 Upload SARIF (Clean Success)
         uses: github/codeql-action/upload-sarif@v3
