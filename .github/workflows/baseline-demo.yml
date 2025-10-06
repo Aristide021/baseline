@@ -38,8 +38,7 @@ jobs:
           INPUT_OUTPUT_FORMAT: 'json'
           INPUT_SARIF_OUTPUT: 'baseline-strict.sarif'
           INPUT_SCENARIO_LABEL: 'strict-demo'
-          INPUT_CONFIG_PATH: '.baseline.strict.json'  # Use strict configuration
-          INPUT_INCLUDE_PATTERNS: 'src/risky-features.css,index.html,enforcement-demo.html'  # Scan violation-prone files
+          INPUT_CONFIG_PATH: '.baseline.strict.json'  # Use strict configuration with risky file patterns
           INPUT_SCAN_MODE: 'repo'  # Force scanning all files, not just changed ones
         continue-on-error: true
           

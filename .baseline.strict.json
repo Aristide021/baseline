@@ -4,6 +4,20 @@
     "javascript": { "baseline-threshold": "widely", "strict-mode": true },
     "html": { "baseline-threshold": "widely" }
   },
-  "enforcement": { "max-violations": 0, "mode": "per-feature" },
+  "enforcement": { 
+    "max-violations": 0, 
+    "mode": "per-feature",
+    "ignore-patterns": [
+      "node_modules/**",
+      "dist/**", 
+      "build/**",
+      "coverage/**"
+    ],
+    "include-patterns": [
+      "src/risky-features.css",
+      "index.html",
+      "enforcement-demo.html"
+    ]
+  },
   "reporting": { "include-remediation": true, "group-by-feature": true }
 }
