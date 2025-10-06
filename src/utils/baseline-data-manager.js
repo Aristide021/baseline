@@ -19,6 +19,8 @@ class BaselineDataManager {
     this.lastLoadedAt = null; // timestamp (ms) when data last loaded into memory
     this.dataSource = null;   // 'api' | 'disk-cache' | 'web-features' | 'fallback'
     this.mappingCount = 0;    // Number of baseline features loaded
+    this.aliasMap = new Map(); // featureId alias -> canonical ID
+    this.syntheticFeatures = new Map(); // injected synthetic features
   }
 
   /**
@@ -38,9 +40,47 @@ class BaselineDataManager {
 
       // Ensure cache directory exists
       await fs.mkdir(this.cacheDir, { recursive: true });
+
+      // Load alias map (best-effort)
+      await this.loadAliasMap();
+      // Prepare synthetic feature set (JS language eras + common modern syntax)
+      this.buildSyntheticFeatures();
     } catch (error) {
       core.warning(`Failed to initialize BaselineDataManager: ${error.message}`);
     }
+  }
+
+  /**
+   * Load feature alias mappings from JSON file
+   */
+  async loadAliasMap() {
+    try {
+      const aliasPath = path.join(__dirname, '..', 'data', 'feature-aliases.json');
+      const raw = await fs.readFile(aliasPath, 'utf8');
+      const json = JSON.parse(raw);
+      Object.entries(json).forEach(([alias, canonical]) => this.aliasMap.set(alias, canonical));
+      core.debug(`Loaded ${this.aliasMap.size} feature aliases`);
+    } catch (e) {
+      core.debug(`No alias map loaded: ${e.message}`);
+    }
+  }
+
+  /**
+   * Build synthetic feature entries for language-level constructs not present in dataset
+   */
+  buildSyntheticFeatures() {
+    const now = new Date();
+    const syntheticDefs = [
+      { id: 'ecmascript-2015', name: 'ECMAScript 2015 (ES6 Core)', baseline: { status: 'widely', low_date: '2016-01-01', high_date: '2017-01-01' } },
+      { id: 'ecmascript-2016', name: 'ECMAScript 2016', baseline: { status: 'widely', low_date: '2017-01-01', high_date: '2018-01-01' } },
+      { id: 'ecmascript-2017', name: 'ECMAScript 2017', baseline: { status: 'widely', low_date: '2018-01-01', high_date: '2019-01-01' } },
+      { id: 'ecmascript-2018', name: 'ECMAScript 2018', baseline: { status: 'widely', low_date: '2019-01-01', high_date: '2020-01-01' } },
+      { id: 'ecmascript-2019', name: 'ECMAScript 2019', baseline: { status: 'widely', low_date: '2020-01-01', high_date: '2021-01-01' } },
+      { id: 'ecmascript-2020', name: 'ECMAScript 2020', baseline: { status: 'widely', low_date: '2021-01-01', high_date: '2022-01-01' } },
+      { id: 'optional-chaining', name: 'Optional Chaining Operator', baseline: { status: 'widely', low_date: '2022-01-01', high_date: '2023-01-01' } },
+      { id: 'nullish-coalescing', name: 'Nullish Coalescing Operator', baseline: { status: 'widely', low_date: '2022-01-01', high_date: '2023-01-01' } }
+    ];
+    syntheticDefs.forEach(def => this.syntheticFeatures.set(def.id, { ...def, synthetic: true, generated: now.toISOString() }));
   }
 
   /**
@@ -67,6 +107,16 @@ class BaselineDataManager {
       this.dataSource = 'disk-cache';
       this.lastLoadedAt = Date.now();
       this.mappingCount = cachedData instanceof Map ? cachedData.size : Object.keys(cachedData || {}).length;
+      // If cache seems suspiciously small, augment just like fresh API result safeguard
+      if (cachedData instanceof Map && cachedData.size < 50) {
+        core.warning(`Disk cache has only ${cachedData.size} features; augmenting with fallback sources and synthetic features`);
+        await this.augmentWithFallback(cachedData);
+        this.dataSource = 'disk-cache+augmented';
+      } else if (cachedData instanceof Map) {
+        // Ensure synthetic features are always present for alias resolution
+        this.injectSynthetic(cachedData);
+        this.mappingCount = cachedData.size;
+      }
       return cachedData;
     }
 
@@ -84,6 +134,15 @@ class BaselineDataManager {
       this.dataSource = 'api';
       this.lastLoadedAt = Date.now();
       this.mappingCount = featureMap.size;
+
+      // Safeguard: if suspiciously small (e.g., < 50), treat as incomplete and augment with fallback
+      if (featureMap.size < 50) {
+        core.warning(`API returned only ${featureMap.size} features, augmenting with fallback sources and synthetic features`);
+        await this.augmentWithFallback(featureMap);
+      } else {
+        // Always merge synthetic features for alias resolution
+        this.injectSynthetic(featureMap);
+      }
       return featureMap;
     } catch (error) {
       core.warning(`webstatus.dev API failed: ${error.message}`);
@@ -103,6 +162,7 @@ class BaselineDataManager {
           this.dataSource = 'web-features';
           this.lastLoadedAt = Date.now();
           this.mappingCount = featureMap.size;
+          this.injectSynthetic(featureMap);
           return featureMap;
         } catch (webFeaturesError) {
           core.error(`Web-features fallback failed: ${webFeaturesError.message}`);
@@ -116,10 +176,41 @@ class BaselineDataManager {
         this.cache.set(cacheKey, fallbackMap);
         this.dataSource = 'fallback';
         this.lastLoadedAt = Date.now();
+        this.injectSynthetic(fallbackMap);
         return fallbackMap;
       }
       
       throw new Error(`Unable to load Baseline data from any source: ${error.message}`);
+    }
+  }
+
+  /**
+   * Augment small API result with web-features & synthetic
+   */
+  async augmentWithFallback(featureMap) {
+    try {
+      const webFeaturesData = await this.loadFromWebFeatures();
+      const wfMap = this.processWebFeaturesData(webFeaturesData);
+      for (const [id, data] of wfMap.entries()) {
+        if (!featureMap.has(id)) featureMap.set(id, data);
+      }
+      this.injectSynthetic(featureMap);
+      this.mappingCount = featureMap.size;
+      core.info(`Augmented feature map now has ${featureMap.size} entries (including synthetic)`);
+    } catch (e) {
+      core.warning(`Failed to augment with web-features: ${e.message}`);
+      this.injectSynthetic(featureMap);
+    }
+  }
+
+  /**
+   * Inject synthetic features to the map (does not overwrite real entries)
+   */
+  injectSynthetic(featureMap) {
+    for (const [id, synthetic] of this.syntheticFeatures.entries()) {
+      if (!featureMap.has(id)) {
+        featureMap.set(id, synthetic);
+      }
     }
   }
 
@@ -444,7 +535,26 @@ class BaselineDataManager {
    */
   getFeatureInfo(featureId) {
     const features = this.cache.get('all-baseline-features');
-    return features?.get(featureId) || null;
+    if (!features) return null;
+
+    // Exact
+    if (features.has(featureId)) return features.get(featureId);
+
+    // Alias
+    if (this.aliasMap.has(featureId)) {
+      const canonical = this.aliasMap.get(featureId);
+      if (features.has(canonical)) return features.get(canonical);
+    }
+
+    // Normalization attempts
+    const normalized = featureId.toLowerCase();
+    if (features.has(normalized)) return features.get(normalized);
+    const dash = normalized.replace(/_/g, '-');
+    if (features.has(dash)) return features.get(dash);
+    const underscore = normalized.replace(/-/g, '_');
+    if (features.has(underscore)) return features.get(underscore);
+
+    return null;
   }
 
   /**

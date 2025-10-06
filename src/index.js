@@ -417,40 +417,51 @@ class BaselineAction {
     // Compute mapping coverage (detected features that have mapping info)
     try {
       if (this.baselineDataManager?.getFeatureInfo && this.allFeatures.length) {
-        core.debug(`Computing mapping coverage for ${this.allFeatures.length} features`);
-        const mappedDetected = this.allFeatures.filter(f => {
-          if (!f.featureId) return false;
-          
-          // Try exact match first
-          let info = this.baselineDataManager.getFeatureInfo(f.featureId);
+        // Check if baseline data is actually loaded
+        const cacheSize = this.baselineDataManager.cache?.get('all-baseline-features')?.size || 0;
+        core.info(`Computing mapping coverage for ${this.allFeatures.length} features (baseline cache: ${cacheSize} features)`);
+        
+        if (cacheSize === 0) {
+          core.warning('Baseline data cache is empty - mapping coverage will be 0%');
+          metadata.mappedDetected = 0;
+          metadata.mappingCoveragePercent = 0;
+        }
+        // Work with unique feature IDs to avoid skew from repeated occurrences
+        const uniqueIds = [...new Set(this.allFeatures.map(f => f.featureId).filter(Boolean))];
+        core.info(`Unique feature IDs detected: ${uniqueIds.length}`);
+        let mappedDetected = 0;
+        for (const fid of uniqueIds) {
+          let info = this.baselineDataManager.getFeatureInfo(fid);
           if (info) {
-            core.debug(`Feature ${f.featureId}: mapped (exact)`);
-            return true;
+            core.debug(`Feature ${fid}: mapped (exact)`);
+            mappedDetected++;
+            continue;
           }
-          
-          // Try common variations
           const variations = [
-            f.featureId + '-property',
-            f.featureId + '-layout',
-            f.featureId.replace('-', '_'),
-            f.featureId.replace('_', '-'),
-            f.featureId.toLowerCase()
-          ];
-          
-          for (const variant of variations) {
-            info = this.baselineDataManager.getFeatureInfo(variant);
-            if (info) {
-              core.debug(`Feature ${f.featureId}: mapped (via ${variant})`);
-              return true;
+            fid + '-property',
+            fid + '-layout',
+            fid?.includes('-') ? fid.replace(/-/g, '_') : undefined,
+            fid?.includes('_') ? fid.replace(/_/g, '-') : undefined,
+            fid.toLowerCase()
+          ].filter(Boolean);
+          let matched = false;
+            for (const variant of variations) {
+              info = this.baselineDataManager.getFeatureInfo(variant);
+              if (info) {
+                core.debug(`Feature ${fid}: mapped (via ${variant})`);
+                mappedDetected++;
+                matched = true;
+                break;
+              }
             }
+          if (!matched) {
+            core.debug(`Feature ${fid}: not mapped`);
           }
-          
-          core.debug(`Feature ${f.featureId}: not mapped`);
-          return false;
-        }).length;
+        }
         metadata.mappedDetected = mappedDetected;
-        metadata.mappingCoveragePercent = this.allFeatures.length ? (mappedDetected / this.allFeatures.length * 100) : 0;
-        core.info(`Mapping coverage: ${mappedDetected}/${this.allFeatures.length} (${metadata.mappingCoveragePercent.toFixed(1)}%)`);
+        metadata.mappingCoveragePercent = uniqueIds.length ? (mappedDetected / uniqueIds.length * 100) : 0;
+        metadata.uniqueFeatureIds = uniqueIds.length;
+        core.info(`Mapping coverage: ${mappedDetected}/${uniqueIds.length} unique (${metadata.mappingCoveragePercent.toFixed(1)}%)`);
       } else {
         core.debug(`Mapping coverage calculation skipped: manager=${!!this.baselineDataManager}, getFeatureInfo=${!!this.baselineDataManager?.getFeatureInfo}, features=${this.allFeatures.length}`);
         metadata.mappedDetected = 0;
@@ -521,6 +532,9 @@ class BaselineAction {
     core.setOutput('mapping-coverage-percent', (metadata.mappingCoveragePercent || 0).toFixed(2));
     
     core.info(`📋 Report saved to ${reportPath}`);
+
+    // Persist metadata for later (GitHub summary phase)
+    this.lastReportMetadata = metadata;
   }
 
   /**
@@ -542,7 +556,11 @@ class BaselineAction {
           threshold: this.config.rules?.css?.['baseline-threshold'] || 'newly'
         },
         baselineQueries: this.config.baselineQueries?.queries || [],
-        enforcementMode: this.config.enforcement?.mode || 'per-feature'
+        enforcementMode: this.config.enforcement?.mode || 'per-feature',
+        // Carry over mapping stats if already computed
+        mappingCoveragePercent: this.lastReportMetadata?.mappingCoveragePercent,
+        mappedDetected: this.lastReportMetadata?.mappedDetected,
+        mappingCount: this.baselineDataManager?.mappingCount || this.lastReportMetadata?.mappingCount || 0
       };
       
       await this.githubIntegration.processResults(

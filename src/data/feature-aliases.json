@@ -1,0 +1,18 @@
+{
+  "async-await": "ecmascript-2017",
+  "template-literals": "ecmascript-2015",
+  "destructuring": "ecmascript-2015",
+  "spread": "ecmascript-2015",
+  "class-syntax": "ecmascript-2015",
+  "arrow-function": "ecmascript-2015",
+  "optional-chaining": "optional-chaining",
+  "nullish-coalescing": "nullish-coalescing",
+  "flexbox-gap": "flexbox",
+  "container-queries": "container-queries",
+  "css-custom-properties": "css-custom-properties",
+  "accent-color": "accent-color",
+  "aspect-ratio": "aspect-ratio",
+  "focus-visible": "focus-visible",
+  "hover-pseudo-class": "hover-pseudo-class",
+  "media-queries": "media-queries"
+}
