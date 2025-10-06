@@ -2,6 +2,8 @@
 
 Automatically enforce web platform feature compatibility standards in your CI/CD pipeline. Unlike existing linting tools that provide suggestions, Baseline acts as a compliance gatekeeper, preventing non-compliant code from reaching production environments.
 
+> 🚀 **Demo Update**: Enhanced with mapping coverage intelligence and comprehensive scan metrics!
+
 ## Features
 
 - 🆕 **Official Baseline Queries**: First GitHub Action to support the new web.dev Baseline syntax (`baseline 2022`, `baseline widely available`)
