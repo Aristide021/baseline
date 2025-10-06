@@ -15,6 +15,10 @@ class BaselineDataManager {
     this.retryDelay = options.retryDelay || 1000;
     this.fallbackData = null;
     this.useWebFeaturesAsFallback = options.useWebFeaturesAsFallback !== false; // Default: true
+    // Telemetry metadata
+    this.lastLoadedAt = null; // timestamp (ms) when data last loaded into memory
+    this.dataSource = null;   // 'api' | 'disk-cache' | 'web-features' | 'fallback'
+    this.mappingCount = 0;    // Number of baseline features loaded
   }
 
   /**
@@ -49,7 +53,10 @@ class BaselineDataManager {
     // Check memory cache first
     if (this.cache.has(cacheKey)) {
       core.debug('Using memory-cached Baseline data');
-      return this.cache.get(cacheKey);
+      this.dataSource = this.dataSource || 'memory';
+      const cached = this.cache.get(cacheKey);
+      this.mappingCount = cached instanceof Map ? cached.size : Object.keys(cached || {}).length;
+      return cached;
     }
 
     // Check disk cache
@@ -57,6 +64,9 @@ class BaselineDataManager {
     if (cachedData) {
       core.debug('Using disk-cached Baseline data');
       this.cache.set(cacheKey, cachedData);
+      this.dataSource = 'disk-cache';
+      this.lastLoadedAt = Date.now();
+      this.mappingCount = cachedData instanceof Map ? cachedData.size : Object.keys(cachedData || {}).length;
       return cachedData;
     }
 
@@ -71,6 +81,9 @@ class BaselineDataManager {
       await this.setCachedBaselineData(featureMap);
       
       core.info(`Loaded ${featureMap.size} Baseline features from webstatus.dev API`);
+      this.dataSource = 'api';
+      this.lastLoadedAt = Date.now();
+      this.mappingCount = featureMap.size;
       return featureMap;
     } catch (error) {
       core.warning(`webstatus.dev API failed: ${error.message}`);
@@ -87,6 +100,9 @@ class BaselineDataManager {
           await this.setCachedBaselineData(featureMap);
           
           core.info(`Loaded ${featureMap.size} Baseline features from web-features fallback`);
+          this.dataSource = 'web-features';
+          this.lastLoadedAt = Date.now();
+          this.mappingCount = featureMap.size;
           return featureMap;
         } catch (webFeaturesError) {
           core.error(`Web-features fallback failed: ${webFeaturesError.message}`);
@@ -98,6 +114,8 @@ class BaselineDataManager {
         core.warning('Using fallback Baseline data due to all loading failures');
         const fallbackMap = this.processFeatureData(this.fallbackData);
         this.cache.set(cacheKey, fallbackMap);
+        this.dataSource = 'fallback';
+        this.lastLoadedAt = Date.now();
         return fallbackMap;
       }
       

@@ -54366,6 +54366,7 @@ class BaselineAction {
       
       // Get files to analyze
       const filesToAnalyze = await this.getFilesToAnalyze();
+      this.totalFilesScanned = filesToAnalyze.length;
       core.info(`📁 Found ${filesToAnalyze.length} files to analyze`);
       
       if (filesToAnalyze.length === 0) {
@@ -54726,6 +54727,7 @@ class BaselineAction {
     
     const metadata = {
       totalFeatures: this.allFeatures.length,
+      totalFilesScanned: this.totalFilesScanned || 0,
       complianceScore: this.policyEngine.calculateComplianceScore(this.allFeatures, this.violations),
       baseline: {
         threshold: this.config.rules?.css?.['baseline-threshold'] || 'newly'
@@ -54733,7 +54735,9 @@ class BaselineAction {
       actionVersion: '1.0.0',
       baselineQueries: this.config.baselineQueries?.queries || [],
       autoConfigured: this.config.baselineQueries?.hasBaselineQueries || false,
-      enforcementMode: this.config.enforcement?.mode || 'per-feature'
+      enforcementMode: this.config.enforcement?.mode || 'per-feature',
+      mappingCount: this.baselineDataManager?.mappingCount || 0,
+      baselineDataSource: this.baselineDataManager?.dataSource || 'unknown'
     };
     
     // Get output format from input
@@ -54776,6 +54780,18 @@ class BaselineAction {
     core.setOutput('violations-count', this.violations.length.toString());
     core.setOutput('compliance-score', metadata.complianceScore.toString());
     core.setOutput('has-violations', this.violations.length > 0 ? 'true' : 'false');
+    // Telemetry outputs
+    core.setOutput('total-files-scanned', (this.totalFilesScanned || 0).toString());
+    core.setOutput('total-features-detected', this.allFeatures.length.toString());
+    core.setOutput('baseline-queries-detected', (this.config.baselineQueries?.hasBaselineQueries ? 'true' : 'false'));
+    core.setOutput('exit-code', (process.exitCode || 0).toString());
+    if (this.config.baselineQueries?.queries) {
+      core.setOutput('baseline-query-list', this.config.baselineQueries.queries.join(', '));
+    }
+    if (this.baselineDataManager?.lastLoadedAt) {
+      core.setOutput('baseline-data-age-ms', (Date.now() - this.baselineDataManager.lastLoadedAt).toString());
+      core.setOutput('baseline-data-source', this.baselineDataManager.dataSource || 'unknown');
+    }
     
     core.info(`📋 Report saved to ${reportPath}`);
   }
@@ -54821,18 +54837,24 @@ class BaselineAction {
       const message = `Baseline compliance check failed with ${this.violations.length} violation${this.violations.length !== 1 ? 's' : ''}`;
       
       // Set deterministic exit codes for CI integration
+      // 0 = success (handled elsewhere)
+      // 1 = general violations (no high severity)
+      // 2 = at least one high severity violation
       const hasHighSeverity = this.violations.some(v => v.severity === 'high');
-      const hasNewlyViolations = this.violations.some(v => v.currentStatus === 'newly');
-      
+      let exitCode = 1;
       if (hasHighSeverity) {
-        process.exitCode = 2; // High severity violations
-      } else if (hasNewlyViolations && enforcementMode === 'error') {
-        process.exitCode = 1; // Newly features treated as errors
-      } else {
-        process.exitCode = 1; // General violations
+        exitCode = 2;
       }
-      
-      core.setFailed(message);
+
+      // IMPORTANT: core.setFailed always forces exit code 1. To preserve code 2 we only use setFailed for code 1.
+      if (exitCode === 2) {
+        core.error(message + ' (high severity)');
+        // Flush logs then exit explicitly
+        process.exitCode = 2;
+      } else {
+        core.setFailed(message);
+        process.exitCode = 1; // explicit for clarity
+      }
     } else if (hasViolations && enforcementMode === 'warn') {
       core.warning(`Found ${this.violations.length} Baseline compliance violations (warnings only)`);
     } else {
@@ -54927,6 +54949,10 @@ class BaselineDataManager {
     this.retryDelay = options.retryDelay || 1000;
     this.fallbackData = null;
     this.useWebFeaturesAsFallback = options.useWebFeaturesAsFallback !== false; // Default: true
+    // Telemetry metadata
+    this.lastLoadedAt = null; // timestamp (ms) when data last loaded into memory
+    this.dataSource = null;   // 'api' | 'disk-cache' | 'web-features' | 'fallback'
+    this.mappingCount = 0;    // Number of baseline features loaded
   }
 
   /**
@@ -54961,7 +54987,10 @@ class BaselineDataManager {
     // Check memory cache first
     if (this.cache.has(cacheKey)) {
       core.debug('Using memory-cached Baseline data');
-      return this.cache.get(cacheKey);
+      this.dataSource = this.dataSource || 'memory';
+      const cached = this.cache.get(cacheKey);
+      this.mappingCount = cached instanceof Map ? cached.size : Object.keys(cached || {}).length;
+      return cached;
     }
 
     // Check disk cache
@@ -54969,6 +54998,9 @@ class BaselineDataManager {
     if (cachedData) {
       core.debug('Using disk-cached Baseline data');
       this.cache.set(cacheKey, cachedData);
+      this.dataSource = 'disk-cache';
+      this.lastLoadedAt = Date.now();
+      this.mappingCount = cachedData instanceof Map ? cachedData.size : Object.keys(cachedData || {}).length;
       return cachedData;
     }
 
@@ -54983,6 +55015,9 @@ class BaselineDataManager {
       await this.setCachedBaselineData(featureMap);
       
       core.info(`Loaded ${featureMap.size} Baseline features from webstatus.dev API`);
+      this.dataSource = 'api';
+      this.lastLoadedAt = Date.now();
+      this.mappingCount = featureMap.size;
       return featureMap;
     } catch (error) {
       core.warning(`webstatus.dev API failed: ${error.message}`);
@@ -54999,6 +55034,9 @@ class BaselineDataManager {
           await this.setCachedBaselineData(featureMap);
           
           core.info(`Loaded ${featureMap.size} Baseline features from web-features fallback`);
+          this.dataSource = 'web-features';
+          this.lastLoadedAt = Date.now();
+          this.mappingCount = featureMap.size;
           return featureMap;
         } catch (webFeaturesError) {
           core.error(`Web-features fallback failed: ${webFeaturesError.message}`);
@@ -55010,6 +55048,8 @@ class BaselineDataManager {
         core.warning('Using fallback Baseline data due to all loading failures');
         const fallbackMap = this.processFeatureData(this.fallbackData);
         this.cache.set(cacheKey, fallbackMap);
+        this.dataSource = 'fallback';
+        this.lastLoadedAt = Date.now();
         return fallbackMap;
       }
       
@@ -57255,6 +57295,16 @@ Check the PR comment or full report for detailed information about violations an
     
     let content = `# ${hasViolations ? '❌' : '✅'} Baseline Compliance Report\n\n`;
     
+    // Add scan statistics line
+    const totalFiles = metadata.totalFilesScanned || metadata.totalFiles || 0;
+    const totalFeatures = metadata.totalFeatures || 0;
+    const baselineQueries = Array.isArray(metadata.baselineQueries) && metadata.baselineQueries.length > 0 
+      ? metadata.baselineQueries.join(', ') 
+      : 'baseline newly available';
+    const enforcementMode = metadata.enforcementMode || 'per-feature';
+    
+    content += `> 📊 **Scan Summary**: Detected ${totalFeatures} features across ${totalFiles} files • Queries: ${baselineQueries} • Mode: ${enforcementMode}\n\n`;
+    
     if (!hasViolations) {
       content += '## ✅ All Clear!\n\n';
       content += 'All detected web platform features meet your Baseline requirements.\n\n';
@@ -57745,17 +57795,30 @@ Found ${fileViolations.length} violation${fileViolations.length !== 1 ? 's' : ''
    * @returns {string} Markdown footer
    */
   generateMarkdownFooter(metadata) {
+    const baselineQueries = (metadata.baselineQueries && metadata.baselineQueries.length)
+      ? metadata.baselineQueries.join(', ')
+      : 'None';
+    const enforcementMode = metadata.enforcementMode || 'per-feature';
+    const dataSource = metadata.baselineDataSource || 'unknown';
+    const mappingCount = metadata.mappingCount || '—';
+    const autoConfigured = metadata.autoConfigured ? 'Yes' : 'No';
+
     return `### ℹ️ Report Information
 
 - **Generated**: ${new Date(metadata.generatedAt).toLocaleString()}
 - **Baseline Action**: v${metadata.actionVersion || '1.0.0'}
 - **Total Features Analyzed**: ${metadata.totalFeatures || 0}
+- **Baseline Queries Detected**: ${baselineQueries}
+- **Auto Policy Config**: ${autoConfigured}
+- **Enforcement Mode**: ${enforcementMode}
+- **Mapping Count (loaded)**: ${mappingCount}
+- **Baseline Data Source**: ${dataSource}
 
-> 💡 **Tip**: Use \`@supports\` queries for CSS features and feature detection for JavaScript APIs to implement progressive enhancement.
+> 🧠 **Adaptive Policy**: Yearly rules auto-generated from Baseline year queries (older years escalate severity). See documentation section "Adaptive Yearly Enforcement".
+> 💡 **Tip**: Use \`@supports\` and JS feature detection for progressive enhancement.
 
 ---
-*This report was generated by the [Baseline GitHub Action](https://github.com/baseline/action)*
-`;
+*This report was generated by the [Baseline GitHub Action](https://github.com/baseline/action)*`;
   }
 
   /**

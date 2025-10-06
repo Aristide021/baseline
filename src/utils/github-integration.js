@@ -439,6 +439,16 @@ Check the PR comment or full report for detailed information about violations an
     
     let content = `# ${hasViolations ? '❌' : '✅'} Baseline Compliance Report\n\n`;
     
+    // Add scan statistics line
+    const totalFiles = metadata.totalFilesScanned || metadata.totalFiles || 0;
+    const totalFeatures = metadata.totalFeatures || 0;
+    const baselineQueries = Array.isArray(metadata.baselineQueries) && metadata.baselineQueries.length > 0 
+      ? metadata.baselineQueries.join(', ') 
+      : 'baseline newly available';
+    const enforcementMode = metadata.enforcementMode || 'per-feature';
+    
+    content += `> 📊 **Scan Summary**: Detected ${totalFeatures} features across ${totalFiles} files • Queries: ${baselineQueries} • Mode: ${enforcementMode}\n\n`;
+    
     if (!hasViolations) {
       content += '## ✅ All Clear!\n\n';
       content += 'All detected web platform features meet your Baseline requirements.\n\n';

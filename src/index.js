@@ -43,6 +43,7 @@ class BaselineAction {
       
       // Get files to analyze
       const filesToAnalyze = await this.getFilesToAnalyze();
+      this.totalFilesScanned = filesToAnalyze.length;
       core.info(`📁 Found ${filesToAnalyze.length} files to analyze`);
       
       if (filesToAnalyze.length === 0) {
@@ -403,6 +404,7 @@ class BaselineAction {
     
     const metadata = {
       totalFeatures: this.allFeatures.length,
+      totalFilesScanned: this.totalFilesScanned || 0,
       complianceScore: this.policyEngine.calculateComplianceScore(this.allFeatures, this.violations),
       baseline: {
         threshold: this.config.rules?.css?.['baseline-threshold'] || 'newly'
@@ -410,7 +412,9 @@ class BaselineAction {
       actionVersion: '1.0.0',
       baselineQueries: this.config.baselineQueries?.queries || [],
       autoConfigured: this.config.baselineQueries?.hasBaselineQueries || false,
-      enforcementMode: this.config.enforcement?.mode || 'per-feature'
+      enforcementMode: this.config.enforcement?.mode || 'per-feature',
+      mappingCount: this.baselineDataManager?.mappingCount || 0,
+      baselineDataSource: this.baselineDataManager?.dataSource || 'unknown'
     };
     
     // Get output format from input
@@ -453,6 +457,18 @@ class BaselineAction {
     core.setOutput('violations-count', this.violations.length.toString());
     core.setOutput('compliance-score', metadata.complianceScore.toString());
     core.setOutput('has-violations', this.violations.length > 0 ? 'true' : 'false');
+    // Telemetry outputs
+    core.setOutput('total-files-scanned', (this.totalFilesScanned || 0).toString());
+    core.setOutput('total-features-detected', this.allFeatures.length.toString());
+    core.setOutput('baseline-queries-detected', (this.config.baselineQueries?.hasBaselineQueries ? 'true' : 'false'));
+    core.setOutput('exit-code', (process.exitCode || 0).toString());
+    if (this.config.baselineQueries?.queries) {
+      core.setOutput('baseline-query-list', this.config.baselineQueries.queries.join(', '));
+    }
+    if (this.baselineDataManager?.lastLoadedAt) {
+      core.setOutput('baseline-data-age-ms', (Date.now() - this.baselineDataManager.lastLoadedAt).toString());
+      core.setOutput('baseline-data-source', this.baselineDataManager.dataSource || 'unknown');
+    }
     
     core.info(`📋 Report saved to ${reportPath}`);
   }
@@ -498,18 +514,24 @@ class BaselineAction {
       const message = `Baseline compliance check failed with ${this.violations.length} violation${this.violations.length !== 1 ? 's' : ''}`;
       
       // Set deterministic exit codes for CI integration
+      // 0 = success (handled elsewhere)
+      // 1 = general violations (no high severity)
+      // 2 = at least one high severity violation
       const hasHighSeverity = this.violations.some(v => v.severity === 'high');
-      const hasNewlyViolations = this.violations.some(v => v.currentStatus === 'newly');
-      
+      let exitCode = 1;
       if (hasHighSeverity) {
-        process.exitCode = 2; // High severity violations
-      } else if (hasNewlyViolations && enforcementMode === 'error') {
-        process.exitCode = 1; // Newly features treated as errors
-      } else {
-        process.exitCode = 1; // General violations
+        exitCode = 2;
       }
-      
-      core.setFailed(message);
+
+      // IMPORTANT: core.setFailed always forces exit code 1. To preserve code 2 we only use setFailed for code 1.
+      if (exitCode === 2) {
+        core.error(message + ' (high severity)');
+        // Flush logs then exit explicitly
+        process.exitCode = 2;
+      } else {
+        core.setFailed(message);
+        process.exitCode = 1; // explicit for clarity
+      }
     } else if (hasViolations && enforcementMode === 'warn') {
       core.warning(`Found ${this.violations.length} Baseline compliance violations (warnings only)`);
     } else {
