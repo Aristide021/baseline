@@ -428,7 +428,8 @@ class BaselineAction {
         }
         // Work with unique feature IDs to avoid skew from repeated occurrences
         const uniqueIds = [...new Set(this.allFeatures.map(f => f.featureId).filter(Boolean))];
-        core.info(`Unique feature IDs detected: ${uniqueIds.length}`);
+        core.info(`🔍 Unique feature IDs detected: ${uniqueIds.length}`);
+        core.info(`📋 Feature IDs: ${uniqueIds.slice(0, 10).join(', ')}${uniqueIds.length > 10 ? '...' : ''}`);
         let mappedDetected = 0;
         for (const fid of uniqueIds) {
           let info = this.baselineDataManager.getFeatureInfo(fid);

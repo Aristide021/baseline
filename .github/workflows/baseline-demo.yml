@@ -84,9 +84,10 @@ jobs:
           INPUT_COMMENT_ON_PR: 'false'  # No PR comment for passing scenario
           INPUT_OUTPUT_FORMAT: 'markdown'
           INPUT_SARIF_OUTPUT: 'baseline-passing.sarif'
-          INPUT_BASELINE_THRESHOLD: 'limited'  # Most lenient threshold
-          INPUT_MAX_VIOLATIONS: '999'  # Allow many violations
+          INPUT_BASELINE_THRESHOLD: 'newly'  # Allow newly interoperable features
+          INPUT_MAX_VIOLATIONS: '999'  # Allow many violations to pass
           INPUT_ENFORCEMENT_MODE: 'warn'  # Warn only, don't fail
+          INPUT_INCLUDE_PATTERNS: 'src/safe-script.js,src/style.css'  # Only scan safe files
           
       - name: 📊 Upload SARIF (Clean Success)
         uses: github/codeql-action/upload-sarif@v3

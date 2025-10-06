@@ -59,9 +59,9 @@ class BaselineDataManager {
       const raw = await fs.readFile(aliasPath, 'utf8');
       const json = JSON.parse(raw);
       Object.entries(json).forEach(([alias, canonical]) => this.aliasMap.set(alias, canonical));
-      core.debug(`Loaded ${this.aliasMap.size} feature aliases`);
+      core.info(`✅ Loaded ${this.aliasMap.size} feature aliases from ${aliasPath}`);
     } catch (e) {
-      core.debug(`No alias map loaded: ${e.message}`);
+      core.warning(`⚠️ No alias map loaded: ${e.message}`);
     }
   }
 
