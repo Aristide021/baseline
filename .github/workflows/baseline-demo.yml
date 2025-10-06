@@ -86,8 +86,7 @@ jobs:
           INPUT_OUTPUT_FORMAT: 'markdown'
           INPUT_SARIF_OUTPUT: 'baseline-passing.sarif'
           INPUT_SCENARIO_LABEL: 'passing-demo'
-          INPUT_CONFIG_PATH: '.baseline.passing.json'  # Use passing configuration
-          INPUT_INCLUDE_PATTERNS: 'src/safe-script.js,src/style.css'  # Only scan safe files
+          INPUT_CONFIG_PATH: '.baseline.passing.json'  # Use passing configuration with restrictive patterns
           INPUT_SCAN_MODE: 'repo'  # Force scanning all files, not just changed ones
           
       - name: 📊 Upload SARIF (Clean Success)
